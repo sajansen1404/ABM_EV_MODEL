@@ -38,6 +38,7 @@ class HistogramModule(VisualizationElement):
 from mesa.visualization.UserParam import UserSettableParameter
 
 n_slider = UserSettableParameter('slider', "N", 100, 2, 200, 1)
+vision_slider = UserSettableParameter('slider', "vision", 10, 1, 20, 1)
 
 
 # server.py
@@ -97,7 +98,7 @@ chart_element = ChartModule([{"Label": "Battery", "Color": "#AA0000"}])
 server = ModularServer(EV_Model,
                        [grid, chart, chart2],
                        "EV Model",
-                       {"N": n_slider, "width": 50, "height": 50, "n_poles": 20})
+                       {"N": n_slider, "width": 50, "height": 50, "n_poles": 20, "vision": vision_slider})
 
 
 server.port = 8521 # The default

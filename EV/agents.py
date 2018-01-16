@@ -29,11 +29,12 @@ class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
     def __init__(self, unique_id, model, vision):
         super().__init__(unique_id, model)
-        self.vision = vision
-        self.battery = 120
-        self.max_battery = 150
-        self.total_EV_in_cell = 0
-
+        self.vision = vision            # taken from a slider input
+        self.battery = 120              # starting battery
+        self.max_battery = np.random.randint(100,200)   # maximum battery size, differs for different cars
+        self.total_EV_in_cell = 0       # initial value
+        self.usual_charge_time = 6      # the time period for how long it usually charges
+        self.time_charging = 0
 
 
     
@@ -60,17 +61,22 @@ class EV_Agent(Agent):
                     new_position = random.choice(possible_steps)
         
         
-        # if it is not fully charged yet, it will stay at a charge_pole
+        # adds up how long a car is at a charge_pole
+        self.time_charging = self.time_at_charge_pole(self.pos, self.time_charging)
+
+        # it will stay at a charge_pole for a certain time period, even if the car is already full
         current_cell = self.model.grid.get_cell_list_contents([self.pos])
-        if any(isinstance(occupant, Charge_pole) for occupant in current_cell) and (self.battery < self.max_battery):
+        if any(isinstance(occupant, Charge_pole) for occupant in current_cell) and (self.time_charging < self.usual_charge_time):
             new_position = self.pos
 
 
 
 
-        # if on charge_pole it will charge
+        # if on charge_pole it will charge until full
         if self.charge_battery(new_position):
-            self.battery += self.charge_battery(new_position)
+            if self.battery < self.max_battery:
+                self.battery += self.charge_battery(new_position)
+
         
         # uses battery according to the distance traveled
         self.use_battery(new_position)
@@ -99,6 +105,14 @@ class EV_Agent(Agent):
         this_cell = self.model.grid.get_cell_list_contents([pos])
         #print(this_cell)
         return len(this_cell) > 2
+
+    def time_at_charge_pole(self, pos, time_charging):
+        current_cell = self.model.grid.get_cell_list_contents([self.pos])
+        if any(isinstance(occupant, Charge_pole) for occupant in current_cell):
+            return time_charging + 1
+        else:
+            return 0
+         
     
     
     def find_CP(self, pos):
