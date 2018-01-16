@@ -14,7 +14,7 @@ from scipy.spatial import distance
 class Charge_pole(Agent):
     def __init__(self, unique_id, pos, model):
         super().__init__(pos, model)
-        max_charge = 10
+        max_charge = 3*model.vision
         max_sockets = 2
         self.charge = max_charge
         self.max_sockets = max_sockets
@@ -31,7 +31,11 @@ class EV_Agent(Agent):
         super().__init__(unique_id, model)
         self.vision = vision
         self.battery = 120
+        self.max_battery = 150
         self.total_EV_in_cell = 0
+
+
+
     
     # can randomly move in the neighbourhood with radius = vision
     def move(self):
@@ -56,7 +60,14 @@ class EV_Agent(Agent):
                     new_position = random.choice(possible_steps)
         
         
-        
+        # if it is not fully charged yet, it will stay at a charge_pole
+        current_cell = self.model.grid.get_cell_list_contents([self.pos])
+        if any(isinstance(occupant, Charge_pole) for occupant in current_cell) and (self.battery < self.max_battery):
+            new_position = self.pos
+
+
+
+
         # if on charge_pole it will charge
         if self.charge_battery(new_position):
             self.battery += self.charge_battery(new_position)
@@ -131,6 +142,11 @@ class EV_Agent(Agent):
     
     def step(self):
         #self.total_EV_in_cell = self.total_EV_in_cell
-        if self.battery > 0:
-            self.move()
+        # if self.battery <= 0:
+        #     self.model.grid._remove_agent(self.pos, self)
+        #     self.model.schedule.remove(self)
+        # if self.battery > 0:
+        self.move()
             #print(self.unique_id, self.battery)
+
+
