@@ -10,6 +10,7 @@ from mesa.datacollection import DataCollector
 from scipy.spatial import distance
 
 from EV.agents import EV_Agent, Charge_pole
+from EV.schedule import RandomActivationByBreed
 
 
 # ouput the mean of all battery
@@ -30,12 +31,13 @@ def count_agents(model):
     N = model.num_agents
     return N
 
+
 # Create the model
 class EV_Model(Model):
     def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10):
         self.num_agents = N
         self.grid = MultiGrid(width, height, False) #toroidal (for now)
-        self.schedule = RandomActivation(self)
+        self.schedule = RandomActivationByBreed(self)
         self.vision = vision
         
         # Create Charge Pole agents
@@ -59,7 +61,8 @@ class EV_Model(Model):
             agent_reporters={"Battery": lambda EV: EV.battery},
             model_reporters= {"Avg_Battery": mean_all_battery,
                                 "lower25":lowest_25_percent,
-                                "Num_agents": count_agents})
+                                "Num_agents": count_agents,
+                                "EVs": lambda m: m.schedule.get_breed_count(EV_Agent)})
         #self.datacollector = DataCollector(data)
 
         self.running = True

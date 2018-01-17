@@ -33,7 +33,7 @@ class EV_Agent(Agent):
         self.battery = 120              # starting battery
         self.max_battery = np.random.randint(100,200)   # maximum battery size, differs for different cars
         self.total_EV_in_cell = 0       # initial value
-        self.usual_charge_time = 6      # the time period for how long it usually charges
+        self.usual_charge_time = 10      # the time period for how long it usually charges
         self.time_charging = 0
 
 
@@ -156,11 +156,11 @@ class EV_Agent(Agent):
     
     def step(self):
         #self.total_EV_in_cell = self.total_EV_in_cell
-        # if self.battery <= 0:
-        #     self.model.grid._remove_agent(self.pos, self)
-        #     self.model.schedule.remove(self)
-        # if self.battery > 0:
-        self.move()
+        if self.battery <= 0:
+            self.model.grid._remove_agent(self.pos, self)
+            self.model.schedule.remove(self)
+        if self.battery > 0:
+            self.move()
             #print(self.unique_id, self.battery)
 
 
