@@ -14,7 +14,7 @@ from scipy.spatial import distance
 class Charge_pole(Agent):
     def __init__(self, unique_id, pos, model):
         super().__init__(pos, model)
-        max_charge = 3*model.vision
+        max_charge = 30
         max_sockets = 2
         self.charge = max_charge
         self.max_sockets = max_sockets
@@ -30,54 +30,65 @@ class EV_Agent(Agent):
     def __init__(self, unique_id, model, vision):
         super().__init__(unique_id, model)
         self.vision = vision            # taken from a slider input
-        self.battery = 120              # starting battery
-        self.max_battery = np.random.randint(100,200)   # maximum battery size, differs for different cars
+        self.battery = np.random.randint(100,200)       # starting battery
+        self.max_battery = np.random.randint(200,300)   # maximum battery size, differs for different cars
         self.total_EV_in_cell = 0       # initial value
-        self.usual_charge_time = 6      # the time period for how long it usually charges
-        self.time_charging = 0
-
+        self.usual_charge_time = 10     # the time period for how long it usually charges
+        self.time_charging = 0          # initial value
+        self.unique_id = unique_id
 
     
-    # can randomly move in the neighbourhood with radius = vision
+    # has vision of  the neighbourhood with radius = vision
     def move(self):
-        possible_steps = self.model.grid.get_neighborhood(
+        """
+        has vision of the nieghborhood with radius (self.vision), it will randomly move, until the battery level 
+        is under a certain poin. It will then check for non-occupied charge poles. When one is in its vision, the agent
+        will move towards this charge pole.
+        """
+        neighborhood_in_vision = self.model.grid.get_neighborhood(
             self.pos,
             radius = self.vision,
             moore=True,
             include_center=True)
         
-        # define a random new position
+        # define a random new position from a radius of 1, exclude center, it is exploring after all
+        possible_steps = self.model.grid.get_neighborhood(self.pos, moore = True, include_center = False)
         new_position = random.choice(possible_steps)
-        
+        state = "Exploring"
+
+
+
+
         # if agent is under a certain battery level it will find a CP
         if self.battery < 100:
+            state = "Looking for electricity"
             
-            # if agent can find CP it will go to that position
+            # if agent can find non-occupied CP it will target that position
             if self.find_CP(self.pos):
-                new_position = self.find_CP(self.pos)
-        
-                #checks if occupied  
-                while (self.is_occupied(new_position)):
-                    new_position = random.choice(possible_steps)
-        
-        
+                target = self.find_CP(self.pos)
+    
+                # moves one step towards the target
+                new_position = self.move_one_step(target, self.pos)
+            
+
+
         # adds up how long a car is at a charge_pole
         self.time_charging = self.time_at_charge_pole(self.pos, self.time_charging)
 
         # it will stay at a charge_pole for a certain time period, even if the car is already full
         current_cell = self.model.grid.get_cell_list_contents([self.pos])
+
+        # if it is at charge pole and time has not reached minimum time
         if any(isinstance(occupant, Charge_pole) for occupant in current_cell) and (self.time_charging < self.usual_charge_time):
+            state = "Charging"
             new_position = self.pos
-
-
-
 
         # if on charge_pole it will charge until full
         if self.charge_battery(new_position):
             if self.battery < self.max_battery:
                 self.battery += self.charge_battery(new_position)
 
-        
+     
         # uses battery according to the distance traveled
         self.use_battery(new_position)
 
@@ -91,7 +102,46 @@ class EV_Agent(Agent):
         self.total_EV_in_cell = total_EV
 
         self.model.grid.move_agent(self, new_position)
+
+    def move_one_step(self, target, current_pos):
+        """ 
+        Needs input coordinates of both target coordinate and the current position and will return
+        the new position it should go to.
+        Advised is to use: 
+        new_position = self.move_one_step(target, current_pos)
+
+        """
+        # go towards the target:
+        target = list(target) # coordinate
+
+        current_pos = list(current_pos) # coordinate
+
+        new_position = list(current_pos)
+       
+
+        # if target x coordinate is higher or lower, edit new_position
+        if target[0] > current_pos[0]:
+            new_position[0] = current_pos[0] + 1 # move up
+        elif target[0] < current_pos[0]:
+            new_position[0] = current_pos[0] - 1 # move down
+
+        # same process for target y coordinate
+        if target[1] > current_pos[1]:
+            new_position[1] = current_pos[1] + 1 # move right
+        elif target[1] < current_pos[1]:
+            new_position[1] = current_pos[1] - 1 # move left
+
+        # new_position is a  coordinate 
         
+        # check if the new position is occupied
+        while (self.is_occupied(new_position)):
+            # try a different x or y  coordinate
+            x_or_y = random.randint(0,1)
+            new_position[x_or_y] = current_pos[x_or_y] + (random.randint(0,2)-1)
+        
+        return new_position
+
+            
         
     # function taken from sugarscape: get_sugar
     def charge_battery(self, pos):
@@ -112,8 +162,6 @@ class EV_Agent(Agent):
             return time_charging + 1
         else:
             return 0
-         
-    
     
     def find_CP(self, pos):
         neig = self.model.grid.get_neighbors(
@@ -156,11 +204,11 @@ class EV_Agent(Agent):
     
     def step(self):
         #self.total_EV_in_cell = self.total_EV_in_cell
-        # if self.battery <= 0:
-        #     self.model.grid._remove_agent(self.pos, self)
-        #     self.model.schedule.remove(self)
-        # if self.battery > 0:
-        self.move()
+        if self.battery <= 0:
+            self.model.grid._remove_agent(self.pos, self)
+            self.model.schedule.remove(self)
+        if self.battery > 0:
+            self.move()
             #print(self.unique_id, self.battery)
 
 

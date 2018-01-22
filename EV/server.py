@@ -37,8 +37,7 @@ class HistogramModule(VisualizationElement):
 
 from mesa.visualization.UserParam import UserSettableParameter
 
-n_slider = UserSettableParameter('slider', "N", 100, 2, 200, 1)
-vision_slider = UserSettableParameter('slider', "vision", 10, 1, 20, 1)
+
 
 
 # server.py
@@ -60,13 +59,15 @@ def agent_portrayal(agent):
         portrayal["Shape"] = "rect"
         portrayal["w"] = 1
         portrayal["h"] = 1
-        portrayal["Layer"]: 0
+        portrayal["Layer"] = 0
 
     elif type(agent) is EV_Agent:
         if agent.total_EV_in_cell >= 0:
             if agent.total_EV_in_cell > 5:
                 agent.total_EV_in_cell = 5
             portrayal["Color"] = color_dic[agent.total_EV_in_cell]
+        if agent.unique_id == 10:
+            portrayal["Color"] = "#00FF00"
     else:
 
         portrayal["Color"] = "gray"
@@ -80,7 +81,10 @@ def agent_portrayal(agent):
     
     return portrayal
 
-grid = CanvasGrid(agent_portrayal, 50, 50)
+
+grid_width = 40
+grid_height = 40
+grid = CanvasGrid(agent_portrayal, grid_width, grid_height)
 
 #canvas_element = CanvasGrid(SsAgent_portrayal, 50, 50, 500, 500)
 chart = ChartModule([{"Label": "Avg_Battery",
@@ -90,15 +94,20 @@ chart = ChartModule([{"Label": "Avg_Battery",
                     data_collector_name='datacollector')
 chart2 = ChartModule([{"Label": "Num_agents",
                       "Color": "Black"}],
-                    data_collector_name='datacollector')
+                    data_collector_name='number_of_EVs')
 
 histogram = HistogramModule(list(np.arange(0,121, 10)), 200, 500)
-chart_element = ChartModule([{"Label": "Battery", "Color": "#AA0000"}])
+chart_element = ChartModule([{"Label": "EVs", "Color": "#AA0000"}])
+
+
+n_slider = UserSettableParameter('slider', "N", 100, 2, 200, 1)
+vision_slider = UserSettableParameter('slider', "vision", 10, 1, 20, 1)
+n_poles_slider = UserSettableParameter('slider', "n_poles", 10, 2, 50, 1)
 
 server = ModularServer(EV_Model,
-                       [grid, chart, chart2],
+                       [grid, chart, chart_element],
                        "EV Model",
-                       {"N": n_slider, "width": 50, "height": 50, "n_poles": 20, "vision": vision_slider})
+                       {"N": n_slider, "width": grid_width, "height": grid_height, "n_poles": n_poles_slider, "vision": vision_slider})
 
 
 server.port = 8521 # The default
