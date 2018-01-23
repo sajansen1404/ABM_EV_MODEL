@@ -262,9 +262,15 @@ class EV_Agent(Agent):
         if len(options) == 0:
             self.target = "searching"
             self.newRandomPos()
-        # until final score functions: choose random from choices
         else:
             OptionScores = []
+
+            # The option array is an array with [[position, best sore], [position, best score], ...] depending on how
+            # many options are available. In this for loop the distance between every CP and the agent is
+            # calculated. This distance is put into a linear declining formula which is multiplied by the already
+            # existing score. After every all the multiplications are done, the CP with the best score is chosen as
+            # the new target position. We still have to discuss if we want it to be exp. of lin. declining function.
+            # (depending on how strong we want the distance to affect the EV)
             for i in np.arange(np.shape(options)[0]):
                 dist = abs(self.pos[0]-self.pos[1]) + abs(options[i][0][0]-options[i][0][1])
                 a_lin = 1 / 50
