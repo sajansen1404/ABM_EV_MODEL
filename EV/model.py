@@ -36,27 +36,28 @@ def count_agents(model):
 class EV_Model(Model):
     def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10):
         self.num_agents = N
-        self.grid = MultiGrid(width, height, False) #toroidal (for now)
+        self.grid = MultiGrid(width, height, True) #toroidal (for now)
         self.schedule = RandomActivationByBreed(self)
         self.vision = vision
-        
+
         # Create Charge Pole agents
         for i in range(n_poles):
-            x = random.randrange(self.grid.width)
-            y = random.randrange(self.grid.height)
-            charge_pole = Charge_pole(i, (x,y), self)
-            self.grid.place_agent(charge_pole, (x, y))
+            # Add the agent to a random grid cell
+            empty_coord = self.grid.find_empty()
+            charge_pole = Charge_pole(i,empty_coord, self)
+            self.grid.place_agent(charge_pole, empty_coord)
         
         # Create EV agents
         for i in range(self.num_agents):
             EV = EV_Agent(i, self, self.vision)
             self.schedule.add(EV)
             # Add the agent to a random grid cell
-            x = random.randrange(self.grid.width)
-            y = random.randrange(self.grid.height)
-            self.grid.place_agent(EV, (x, y))
-        
+            empty_coord = self.grid.find_empty()
+            home_pos = self.grid.find_empty()
+            work_pos = self.grid.find_empty()
             
+            self.grid.place_agent(EV, empty_coord)
+
         self.datacollector = DataCollector(
             agent_reporters={"Battery": lambda EV: EV.battery},
             model_reporters= {"Avg_Battery": mean_all_battery,
