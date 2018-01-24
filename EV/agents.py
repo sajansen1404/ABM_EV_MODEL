@@ -39,7 +39,7 @@ class EV_Agent(Agent):
         self.offLimits = []
         self.prev_target = ""
         self.prev_target_pos = []
-        self.cpf = []
+        self.cpf = [0.25,0.5,0.75,1.0]
 
         self.home_pos = home_pos            # Agent lives here
         self.work_pos = work_pos            # Agent works here
@@ -264,7 +264,7 @@ class EV_Agent(Agent):
     def chooseStrategy(self):
         r = np.random.rand()
         for i in range(len(self.cpf)):
-            if i<r:
+            if r<self.cpf[i]:
                 return i+1
 
     # compensates the age of memories by formula y = score * 0.98 ^ (current pole_count - pole_count attached to memory)
