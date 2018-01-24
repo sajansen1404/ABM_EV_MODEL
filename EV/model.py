@@ -35,9 +35,8 @@ def count_agents(model):
 # Create the model
 class EV_Model(Model):
     def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10):
-        super().__init__()
-
         self.num_agents = N
+
         self.grid = MultiGrid(width, height, False) #toroidal (for now)
         self.schedule = RandomActivationByBreed(self)
         self.vision = vision
@@ -49,6 +48,7 @@ class EV_Model(Model):
             for j in np.arange(self.grid.height):
                 all_grid_points.append([i, j])
         np.random.shuffle(all_grid_points)
+
 
         # Create Charge Pole agents
         index = 0

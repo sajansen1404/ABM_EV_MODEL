@@ -71,6 +71,7 @@ def agent_portrayal(agent):
         portrayal["Layer"] = 1
 
 
+
     # portrayal["Shape"] = "rect"
     # portrayal["Filled"] = "true"
     # portrayal["Layer"] = 0
