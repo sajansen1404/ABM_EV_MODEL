@@ -187,17 +187,24 @@ class EV_Agent(Agent):
 
     # chooses new random position around center
     def newRandomPos(self):
-        hw_dist = np.sqrt((self.home_pos[0]-self.work_pos[0])**2 + (self.home_pos[1]-self.work_pos[1])**2)
-        center_pos = ((self.home_pos[0]+self.work_pos[0])/2, (self.home_pos[1]+self.work_pos[1])/2)
-        self.target_pos = (self.braveness*np.random.randint(np.max([center_pos[0] - hw_dist, 0]),np.min([center_pos[0] + hw_dist, self.model.grid.width])),self.braveness*np.random.randint(np.max([center_pos[1] - hw_dist, 0]),np.min([center_pos[1] + hw_dist, self.model.grid.height])))
+        # Coordinates between home and work
+        center_pos = ((self.home_pos[0]+self.work_pos[0])/2,
+                      (self.home_pos[1]+self.work_pos[1])/2)
 
-    # chooses step closest to target
+        # Random polar coordinates
+        rand_angle = np.random.uniform(low=0, high=np.pi*2)
+        rand_distance = np.random.uniform(low=0, high=self.braveness)
+
+        # New random target position
+        self.target_pos[0] = int(np.clip(a_min=0, a_max=self.model.grid.width, a=center_pos[0]+rand_distance*np.cos(rand_angle)))
+        self.target_pos[1] = int(np.clip(a_min=0, a_max=self.model.grid.height, a=center_pos[1] + rand_distance * np.sin(rand_angle)))
+
     def chooseNextStep(self):
         # Steps towards the target and chooses a position with the shortest remaining distance
         self.new_position = self.possible_steps[0]
-        new_distance = (self.new_position[0]-self.target_pos[0])**2 + (self.new_position[1]-self.target_pos[1])**2
+        new_distance = distance.euclidean(self.new_position, self.target_pos)
         for candidate_position in self.possible_steps:
-            candidate_distance = (candidate_position[0]-self.target_pos[0])**2 + (candidate_position[1]-self.target_pos[1])**2
+            candidate_distance = distance.euclidean(self.target_pos, candidate_position)
             if candidate_distance < new_distance:
                 new_distance = candidate_distance
                 self.new_position = candidate_position[:]
