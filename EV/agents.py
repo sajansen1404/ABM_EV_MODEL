@@ -15,20 +15,27 @@ from scipy.spatial import distance
 class Charge_pole(Agent):
     def __init__(self, unique_id, pos, model):
         super().__init__(pos, model)
-        self.free_poles = 2
-        self.pos = (0, 0)
+        self.free_poles = 2        
 
     def step(self):
         pass
+        max_charge = 3*model.vision
+        max_sockets = 2
+        self.charge = max_charge
+        self.max_sockets = max_sockets
+        self.pos = pos
+        
+
+    def step(self):
+        self.amount = min([self.max_sockets, self.amount + 1])
+
 
 # Create the Electric Vehicles agents
 class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
+
     def __init__(self, unique_id, model, vision, home_pos, work_pos):
         super().__init__(unique_id, model)
-
-        self.pos = (0, 0)
-
         self.unique_id = unique_id
         self.vision = 1                                                    # taken from a slider input
         self.max_battery = np.random.randint(150,200)                      # maximum battery size, differs for different cars
@@ -48,7 +55,7 @@ class EV_Agent(Agent):
         self.shopping_pos = (0, 0)          # Will be set later
         self.target = "work"                # Sets off from home at first
         self.target_pos = self.work_pos[:]
-        self.braveness = 20
+        self.braveness = 1
 
     # can randomly move in the neighbourhood with radius = vision
     def move(self):
@@ -202,7 +209,7 @@ class EV_Agent(Agent):
     
     def moveEV(self):
         self.use_battery()
-        self.model.grid.move_agent(self, self.new_position)
+        self.model.grid.move_agent(self,self.new_position)
     
     def initMemory(self):
         # for each strategy create a (neutral) memory
@@ -317,17 +324,21 @@ class EV_Agent(Agent):
             print(options[0])
             print(options[0][0])
         return options
-
-    # Decrease the charge of the battery
+            
+    # function to decrease battery with the distance
     def use_battery(self):
-        dist = distance.euclidean(self.pos, self.new_position)
-        self.battery = self.battery - dist
+        dist = (distance.euclidean(self.pos, self.new_position))
+        cost = dist
+        self.battery -= cost
     
     def step(self):
-
+        #self.total_EV_in_cell = self.total_EV_in_cell
         if self.battery <= 0:
-            self.model.schedule.remove(self)
             self.model.grid._remove_agent(self.pos, self)
-
+            self.model.schedule.remove(self)
         if self.battery > 0:
             self.move()
+
+            #print(self.unique_id, self.battery)
+
+
