@@ -1,4 +1,4 @@
-### agents.py
+#   agents.py
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,21 +19,10 @@ class Charge_pole(Agent):
 
     def step(self):
         pass
-        max_charge = 3*model.vision
-        max_sockets = 2
-        self.charge = max_charge
-        self.max_sockets = max_sockets
-        self.pos = pos
-        
-
-    def step(self):
-        self.amount = min([self.max_sockets, self.amount + 1])
-
 
 # Create the Electric Vehicles agents
 class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
-
     def __init__(self, unique_id, model, vision, home_pos, work_pos):
         super().__init__(unique_id, model)
         self.unique_id = unique_id
@@ -50,6 +39,8 @@ class EV_Agent(Agent):
         self.offLimits = []
         self.prev_target = ""
         self.prev_target_pos = []
+        self.cpf = []
+
         self.home_pos = home_pos            # Agent lives here
         self.work_pos = work_pos            # Agent works here
         self.shopping_pos = (0, 0)          # Will be set later
@@ -59,32 +50,35 @@ class EV_Agent(Agent):
 
     # can randomly move in the neighbourhood with radius = vision
     def move(self):
-        self.checkTargets()
-        if not (self.target == "charge_pole" and self.pos == self.target_pos):
-            self.getNeighbourhood()
-            self.chooseNextStep()
-            self.moveEV()
+        self.checkTargets()                                                     # checks if needs to look for chargepole, and checks if target is reached
+        if not (self.target == "charge_pole" and self.pos == self.target_pos):  # if not charging (anymore):
+            self.getNeighbourhood()                                             # - find possible moves and register charging poles within vision
+            self.chooseNextStep()                                               # - choose next steps based on target and possible moves
+            self.moveEV()                                                       # move and use battery
             
-        
+    # registers possible moves and charging pole positions    
     def getNeighbourhood(self):
-        self.possible_steps = self.model.grid.get_neighborhood(self.pos,radius = 1,moore=True,include_center=True)
-        self.polesInSight = self.checkForPoles()
+        self.possible_steps = self.model.grid.get_neighborhood(self.pos,radius = 1,moore=True,include_center=True) # possible moves
+        self.polesInSight = self.checkForPoles()  # returns positions of all poles within vision
 
         done = False
-        neighbors = []
+        neighbors = []    # array of neighbors, saved to prevent updating the memory of the same pole many times in a row, because it is close
+        # for each pole in vision, if not just updated, check for free spaces and update memory
         for point in self.polesInSight:
             if self.inLastPoints(point) == False:
                 neighbors.append(point)
                 if self.checkIfFree(point)>0:
                     self.updateMemory(1,point)
+                    # if the pole has space and the battery is verylow or no other pole was chosen yet, it sets the pole as target (to give the strategies a chance I don't always grab the closest pole)
                     if (self.battery < 50 and done == False) or (self.battery < 100 and self.target != "charge_pole"):
                         if self.target != "charge_pole" and self.target != "searching": 
-                            self.prev_target = self.target
+                            self.prev_target = self.target           # store target and position to continue to after charging
                             self.prev_target_pos = self.target_pos
                         self.target_pos = point
                         self.target = "charge_pole"
                         done = True
                 else:
+                    # if the pole is full, store this information to memory so when looking for a pole it won't visit the 3 (at this point) last full poles it passed by
                     self.updateMemory(-1,point)
                     if self.battery < 100:
                         if len(self.offLimits) < 4:
@@ -93,10 +87,12 @@ class EV_Agent(Agent):
                             self.offLimits = [point]+self.offLimits[:-1]
         self.neighborMemory(neighbors)
 
-    def neighborMemory(self,neighbors):
+    # adds all new neighboring poles to memory, replacing older memories
+    def neighborMemory(self,neighbors):  
         self.memory["neighborPoles"] = [neighbors], self.memory["neighborPoles"][:-1]
 
-    def checkForPoles(self):
+    # checks for poles within self.vision and returns the positions
+    def checkForPoles(self):  
         poles = []
         cells = self.model.grid.get_neighborhood(self.pos,radius = self.vision,moore=True,include_center=True)
         for cell in cells:
@@ -105,6 +101,7 @@ class EV_Agent(Agent):
                     poles.append(cell)
         return poles
 
+    # returns the free sockets of a pole at a given position
     def checkIfFree(self,pos):
         for agent in self.model.grid.get_cell_list_contents(pos):
             if type(agent) == Charge_pole:
@@ -114,35 +111,38 @@ class EV_Agent(Agent):
                     print("too little poles!!!!", agent.free_poles,pos)
                 return agent.free_poles
 
+    # registers that the car starts charging and a space at the pole is taken
     def takePlace(self):
         for agent in self.model.grid.get_cell_list_contents(self.pos):
             if type(agent) == Charge_pole:
                 agent.free_poles = agent.free_poles - 1
-                #print(self.pos, "free poles: ", agent.free_poles)
 
+    # registers that charging is complete and a space at the pole is freed
     def freePlace(self):
         for agent in self.model.grid.get_cell_list_contents(self.pos):
             if type(agent) == Charge_pole:
                 agent.free_poles = agent.free_poles + 1
-                #print(self.pos, "free poles: ", agent.free_poles)
 
+    # checks whether given position is in neighborMemory
+    # to prevent from updating the same pole memory every step
     def inLastPoints(self,pos):
         for timepoint in self.memory["neighborPoles"]:
             for coordinate in timepoint:
                 if coordinate == pos:
                     return True
         return False
-
+    
+    # charges and checks if conditions for charging complete are met
     def charge(self):
-        #print(self.unique_id, self.battery, self.pos)
         self.time_charging = self.time_charging + 1
         if self.time_charging < self.usual_charge_time or self.battery < self.max_battery:
             if self.battery < self.max_battery:
                 self.battery += 10
                 if self.battery > self.max_battery: 
                     self.battery = self.max_battery
+        # if battery is done charging and minimum charging time is over, stop charging
         else: 
-            #print("done", self.unique_id, self.battery, self.pos)
+            # resets values, goes back to previous targets and frees socket space
             self.target = self.prev_target
             self.target_pos = self.prev_target_pos
             self.time_charging = 0
@@ -150,12 +150,13 @@ class EV_Agent(Agent):
             self.offLimits = []
             self.freePlace()
 
+    # checks whether EV needs to look for charger and whether targets are reached
     def checkTargets(self):
         if self.battery < 100 and self.target != "charge_pole" and self.target != "searching":
             self.chooseTargetPole()
 
         if self.target_pos[0] == self.pos[0] and self.target_pos[1] == self.pos[1]:
-            # Target: work -> shopping, shopping -> home, home -> work
+            # Target: work -> shopping, shopping -> home, home -> work, searching -> searching (new target position), charge_pole -> ____ -> prev_target
             if self.target == "work":
                 self.target = "shopping"
                 self.newRandomPos()                
@@ -184,11 +185,13 @@ class EV_Agent(Agent):
                 self.target = "work"
                 self.target_pos = self.work_pos[:]
 
+    # chooses new random position around center
     def newRandomPos(self):
         hw_dist = np.sqrt((self.home_pos[0]-self.work_pos[0])**2 + (self.home_pos[1]-self.work_pos[1])**2)
         center_pos = ((self.home_pos[0]+self.work_pos[0])/2, (self.home_pos[1]+self.work_pos[1])/2)
         self.target_pos = (self.braveness*np.random.randint(np.max([center_pos[0] - hw_dist, 0]),np.min([center_pos[0] + hw_dist, self.model.grid.width])),self.braveness*np.random.randint(np.max([center_pos[1] - hw_dist, 0]),np.min([center_pos[1] + hw_dist, self.model.grid.height])))
 
+    # chooses step closest to target
     def chooseNextStep(self):
         # Steps towards the target and chooses a position with the shortest remaining distance
         self.new_position = self.possible_steps[0]
@@ -199,20 +202,21 @@ class EV_Agent(Agent):
                 new_distance = candidate_distance
                 self.new_position = candidate_position[:]
     
+    # changes position an drains battery
     def moveEV(self):
         self.use_battery()
         self.model.grid.move_agent(self,self.new_position)
     
+    # initiates memory dictionary and score dictionary
     def initMemory(self):
-        # for each strategy create a (neutral) memory
         self.memory = {}
         self.scores = {}
-        for i in range(len(self.strategies)):
+        for i in range(len(self.strategies)): # for each strategy create a (neutral) memory
             self.memory[i+1]=[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0]]
         self.memory["neighborPoles"] = [[0],[0],[0]]
-        self.cpf = []
         self.updateStrategies()
 
+    # saves new memories
     def updateMemory(self,succes,pos):
         self.pole_count += 1
         if pos in self.memory:
@@ -223,7 +227,8 @@ class EV_Agent(Agent):
             self.memory[self.current_strategy] = [[succes]+self.memory[self.current_strategy][0][:-1],[self.pole_count]+self.memory[self.current_strategy][1][:-1]]
         self.updateStrategies()
         self.updateScores(pos)
-        
+    
+    # updates cumulative probability function based on new memories for strategy    
     def updateStrategies(self):
         prev=0
         self.cpf = []
@@ -237,6 +242,7 @@ class EV_Agent(Agent):
         for i in range(len(self.cpf)):
             self.cpf[i]  = self.cpf[i] / self.cpf[len(self.strategies)-1]
     
+    # updates scores when memory changes
     def updateScores(self,pos):
         if pos not in self.scores:
             self.scores[pos] = [0,0,0,0]
@@ -247,21 +253,22 @@ class EV_Agent(Agent):
                 temp += self.strategies[i][j]*age[j]
             self.scores[pos][i] = temp
 
-    # call self.current_strategy = self.chooseStrategy() - chosen based on cumulative probability function
+    # strategy chosen based on cumulative probability function
     def chooseStrategy(self):
         r = np.random.rand()
         for i in range(len(self.cpf)):
             if i<r:
                 return i+1
 
+    # compensates the age of memories by formula y = score * 0.98 ^ (current pole_count - pole_count attached to memory)
     def ageCompensation(self,key):
         result=[]
         for i in range(len(self.memory[key][1])):
             result.append( self.memory[key][0][i] * math.pow(0.98,self.pole_count-self.memory[key][1][i]))
         return result
 
+    # if possible, chooses target pole. Otherwise starts exploring
     def chooseTargetPole(self):
-        #print("choosing target pole",self.unique_id)
         if self.target != "searching" and self.target != "charge_pole":
             self.prev_target = self.target 
             self.prev_target_pos = self.target_pos
@@ -295,6 +302,7 @@ class EV_Agent(Agent):
             self.target = "charge_pole"
             #print("target set",self.unique_id,self.target_pos)
 
+    # goes through known poles and checks if they're options as targets
     def checkOptions(self):
         # get scores for current strategy
         num=0
@@ -311,10 +319,6 @@ class EV_Agent(Agent):
                     found += 1
                 else: 
                     options.remove(opt)
-        print(options)
-        if len(options)>0:
-            print(options[0])
-            print(options[0][0])
         return options
             
     # function to decrease battery with the distance
@@ -324,13 +328,9 @@ class EV_Agent(Agent):
         self.battery -= cost
     
     def step(self):
-        #self.total_EV_in_cell = self.total_EV_in_cell
         if self.battery <= 0:
             self.model.grid._remove_agent(self.pos, self)
             self.model.schedule.remove(self)
         if self.battery > 0:
             self.move()
-
             #print(self.unique_id, self.battery)
-
-
