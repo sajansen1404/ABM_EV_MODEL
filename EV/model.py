@@ -36,6 +36,7 @@ def count_agents(model):
 class EV_Model(Model):
     def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10):
         self.num_agents = N
+
         self.grid = MultiGrid(width, height, False) #toroidal (for now)
         self.schedule = RandomActivationByBreed(self)
         self.vision = vision

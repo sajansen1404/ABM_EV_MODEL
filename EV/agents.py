@@ -19,10 +19,21 @@ class Charge_pole(Agent):
 
     def step(self):
         pass
+        max_charge = 3*model.vision
+        max_sockets = 2
+        self.charge = max_charge
+        self.max_sockets = max_sockets
+        self.pos = pos
+        
+
+    def step(self):
+        self.amount = min([self.max_sockets, self.amount + 1])
+
 
 # Create the Electric Vehicles agents
 class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
+
     def __init__(self, unique_id, model, vision, home_pos, work_pos):
         super().__init__(unique_id, model)
         self.unique_id = unique_id
