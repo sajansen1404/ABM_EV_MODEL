@@ -194,8 +194,8 @@ class EV_Agent(Agent):
         rand_distance = np.random.uniform(low=0, high=self.braveness)
 
         # New random target position
-        self.target_pos = (int(np.clip(a_min=0, a_max=self.model.grid.width, a=center_pos+rand_distance*np.cos(rand_angle))),
-                           int(np.clip(a_min=0, a_max=self.model.grid.height, a=center_pos + rand_distance * np.sin(rand_angle))))
+        self.target_pos[0] = int(np.clip(a_min=0, a_max=self.model.grid.width, a=center_pos[0]+rand_distance*np.cos(rand_angle)))
+        self.target_pos[1] = int(np.clip(a_min=0, a_max=self.model.grid.height, a=center_pos[1] + rand_distance * np.sin(rand_angle)))
 
     def chooseNextStep(self):
         # Steps towards the target and chooses a position with the shortest remaining distance
