@@ -55,20 +55,21 @@ def agent_portrayal(agent):
                  "Layer": 1,
                  "r": 0.5}
     if type(agent) is Charge_pole:
-        portrayal["Color"] = "red"
         portrayal["Shape"] = "rect"
         portrayal["w"] = 1
         portrayal["h"] = 1
-        portrayal["Layer"]: 0
+        portrayal["Layer"]= 0
+        if agent.free_poles == 2:
+            portrayal["Color"] = "green"
+        elif agent.free_poles == 1:
+            portrayal["Color"] = "orange"
+        else:
+            portrayal["Color"] = "red"
 
     elif type(agent) is EV_Agent:
-        if agent.total_EV_in_cell >= 0:
-            if agent.total_EV_in_cell > 5:
-                agent.total_EV_in_cell = 5
-            portrayal["Color"] = color_dic[agent.total_EV_in_cell]
-    else:
+        portrayal["Color"] = "black"
+        portrayal["Layer"] = 1
 
-        portrayal["Color"] = "gray"
 
 
     # portrayal["Shape"] = "rect"

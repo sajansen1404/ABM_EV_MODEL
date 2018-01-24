@@ -36,27 +36,42 @@ def count_agents(model):
 class EV_Model(Model):
     def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10):
         self.num_agents = N
-        self.grid = MultiGrid(width, height, True) #toroidal (for now)
+
+        self.grid = MultiGrid(width, height, False) #toroidal (for now)
         self.schedule = RandomActivationByBreed(self)
         self.vision = vision
 
+
+        # All grid points: (Terribly inefficient, but works.)
+        all_grid_points = []
+        for i in np.arange(self.grid.width):
+            for j in np.arange(self.grid.height):
+                all_grid_points.append([i, j])
+        np.random.shuffle(all_grid_points)
+
+
         # Create Charge Pole agents
+        index = 0
         for i in range(n_poles):
-            # Add the agent to a random grid cell
-            empty_coord = self.grid.find_empty()
-            charge_pole = Charge_pole(i,empty_coord, self)
-            self.grid.place_agent(charge_pole, empty_coord)
-        
+            x, y = all_grid_points[index]
+            index = index + 1
+
+            charge_pole = Charge_pole(i, (x,y), self)
+            self.grid.place_agent(charge_pole, (x, y))
+
+        # Create list of all possible homes and workplaces, and choose two randomly per agent
+
         # Create EV agents
         for i in range(self.num_agents):
-            EV = EV_Agent(i, self, self.vision)
+            home_pos = all_grid_points[index]
+            index = index + 1
+            work_pos = all_grid_points[index]
+            index = index + 1
+
+            EV = EV_Agent(i, self, self.vision, home_pos, work_pos)
             self.schedule.add(EV)
             # Add the agent to a random grid cell
-            empty_coord = self.grid.find_empty()
-            home_pos = self.grid.find_empty()
-            work_pos = self.grid.find_empty()
-            
-            self.grid.place_agent(EV, empty_coord)
+            self.grid.place_agent(EV, home_pos)
 
         self.datacollector = DataCollector(
             agent_reporters={"Battery": lambda EV: EV.battery},
