@@ -146,7 +146,7 @@ class EV_Agent(Agent):
             self.target = self.prev_target
             self.target_pos = self.prev_target_pos
             self.time_charging = 0
-            self.strategy = 0
+            self.current_strategy = 0
             self.offLimits = []
             self.freePlace()
 
