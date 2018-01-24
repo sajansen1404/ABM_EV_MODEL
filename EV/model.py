@@ -49,12 +49,13 @@ class EV_Model(Model):
         
         # Create EV agents
         for i in range(self.num_agents):
-            EV = EV_Agent(i, self, self.vision)
-            self.schedule.add(EV)
+            
             # Add the agent to a random grid cell
             empty_coord = self.grid.find_empty()
             home_pos = self.grid.find_empty()
             work_pos = self.grid.find_empty()
+            EV = EV_Agent(i, self, self.vision, home_pos, work_pos)
+            self.schedule.add(EV)
             
             self.grid.place_agent(EV, empty_coord)
 
