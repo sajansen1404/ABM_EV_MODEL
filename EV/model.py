@@ -54,7 +54,7 @@ class EV_Model(Model):
             empty_coord = self.grid.find_empty()
             home_pos = self.grid.find_empty()
             work_pos = self.grid.find_empty()
-            EV = EV_Agent(i, self, self.vision, home_pos, work_pos)
+            EV = EV_Agent(i, self, self.vision, np.array(home_pos), np.array(work_pos))
             self.schedule.add(EV)
             
             self.grid.place_agent(EV, empty_coord)
