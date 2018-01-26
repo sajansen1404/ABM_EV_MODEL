@@ -196,8 +196,7 @@ class EV_Agent(Agent):
         rand_distance = np.random.uniform(low=0, high=self.braveness)
 
         # New random target position
-        self.target_pos[0] = int(np.clip(a_min=0, a_max=self.model.grid.width, a=center_pos[0]+rand_distance*np.cos(rand_angle)))
-        self.target_pos[1] = int(np.clip(a_min=0, a_max=self.model.grid.height, a=center_pos[1] + rand_distance * np.sin(rand_angle)))
+        self.target_pos = (int(np.clip(a_min=0, a_max=self.model.grid.width, a=center_pos[0]+rand_distance*np.cos(rand_angle))),int(np.clip(a_min=0, a_max=self.model.grid.height, a=center_pos[1] + rand_distance * np.sin(rand_angle))))
 
     def chooseNextStep(self):
         # Steps towards the target and chooses a position with the shortest remaining distance
@@ -230,9 +229,9 @@ class EV_Agent(Agent):
             self.memory[pos] = [[succes]+self.memory[pos][0][:-1],[self.pole_count]+self.memory[pos][1][:-1]]
         else:
             self.memory[pos] = [[succes]+[0,0,0,0,0,0,0,0,0],[self.pole_count]+[0,0,0,0,0,0,0,0,0]]
-        if self.current_strategy > 0 and pos == self.target_pos:
+        if self.current_strategy > 0 and pos[0] == self.target_pos[0] and pos[1] == self.target_pos[1]:
             self.memory[self.current_strategy] = [[succes]+self.memory[self.current_strategy][0][:-1],[self.pole_count]+self.memory[self.current_strategy][1][:-1]]
-        self.updateStrategies()
+            self.updateStrategies()
         self.updateScores(pos)
     
     # updates cumulative probability function based on new memories for strategy    
