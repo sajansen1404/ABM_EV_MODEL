@@ -19,21 +19,10 @@ class Charge_pole(Agent):
 
     def step(self):
         pass
-        max_charge = 3*model.vision
-        max_sockets = 2
-        self.charge = max_charge
-        self.max_sockets = max_sockets
-        self.pos = pos
-        
-
-    def step(self):
-        self.amount = min([self.max_sockets, self.amount + 1])
-
 
 # Create the Electric Vehicles agents
 class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
-
     def __init__(self, unique_id, model, vision, home_pos, work_pos):
         super().__init__(unique_id, model)
         self.unique_id = unique_id
@@ -87,10 +76,7 @@ class EV_Agent(Agent):
                 else:
                     self.updateMemory(-1,point)
                     if self.battery < 100:
-                        if len(self.offLimits) < 4:
-                            self.offLimits.append(point)
-                        else:
-                            self.offLimits = [point]+self.offLimits[:-1]
+                            self.offLimits = [point]
         self.neighborMemory(neighbors)
 
     def neighborMemory(self,neighbors):
@@ -172,10 +158,7 @@ class EV_Agent(Agent):
                         #print("target reached: charging", self.unique_id)
                         self.charge()
                     else:
-                        if len(self.offLimits) < 4:
-                            self.offLimits.append(self.pos)
-                        else:
-                            self.offLimits = [self.pos]+self.offLimits[:-1]
+                        self.offLimits = [self.pos]
                         self.chooseTargetPole()
                 else:
                     self.charge()
@@ -276,24 +259,22 @@ class EV_Agent(Agent):
         else:
             OptionScores = []
 
-            # The option array is an array with [[position, best sore], [position, best score], ...] depending on how
-            # many options are available. In this for loop the distance between every CP and the agent is
-            # calculated. This distance is put into a linear declining formula which is multiplied by the already
-            # existing score. After every all the multiplications are done, the CP with the best score is chosen as
-            # the new target position. We still have to discuss if we want it to be exp. of lin. declining function.
-            # (depending on how strong we want the distance to affect the EV)
             for i in np.arange(np.shape(options)[0]):
+                # adding weight to distance & battery and calculating new score for every pole
                 dist = abs(self.pos[0]-self.pos[1]) + abs(options[i][0][0]-options[i][0][1])
-                a_lin = 1 / 50
-                w_dist_lin = (-a_lin * dist) + 1
-                new_CP_score = w_dist_lin * options[i][1]
+                a = 1 / 100
+                w_dist = (-a * dist) + 1
+                w_batt = (-a * self.battery)+1
+                new_CP_score = (w_dist - (w_batt * (dist/100)))* options[i][1]
+
+                # adding these new scores to an array
                 OptionScores.append(new_CP_score)
 
+            # choosing the pole with the highest score from the array as the new target
             ind_highest_score = np.argmax(OptionScores)
             self.target_pos = options[ind_highest_score][0]
-            #self.target_pos = random.choice(options)[0]
             self.target = "charge_pole"
-            #print("target set",self.unique_id,self.target_pos)
+
 
     def checkOptions(self):
         # get scores for current strategy
@@ -311,6 +292,10 @@ class EV_Agent(Agent):
                     found += 1
                 else: 
                     options.remove(opt)
+
+        # if self.dist > max([x,y])+0.41421356237 * min([x,y])
+        #         options.remove(pole)
+
         print(options)
         if len(options)>0:
             print(options[0])
