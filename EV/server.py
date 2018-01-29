@@ -55,22 +55,21 @@ def agent_portrayal(agent):
                  "Layer": 1,
                  "r": 0.5}
     if type(agent) is Charge_pole:
-        portrayal["Color"] = "red"
         portrayal["Shape"] = "rect"
         portrayal["w"] = 1
         portrayal["h"] = 1
-        portrayal["Layer"] = 0
+        portrayal["Layer"]= 0
+        if agent.free_poles == 2:
+            portrayal["Color"] = "green"
+        elif agent.free_poles == 1:
+            portrayal["Color"] = "orange"
+        else:
+            portrayal["Color"] = "red"
 
     elif type(agent) is EV_Agent:
-        if agent.total_EV_in_cell >= 0:
-            if agent.total_EV_in_cell > 5:
-                agent.total_EV_in_cell = 5
-            portrayal["Color"] = color_dic[agent.total_EV_in_cell]
-        if agent.unique_id == 10:
-            portrayal["Color"] = "#00FF00"
-    else:
+        portrayal["Color"] = "black"
+        portrayal["Layer"] = 1
 
-        portrayal["Color"] = "gray"
 
 
     # portrayal["Shape"] = "rect"
@@ -82,8 +81,8 @@ def agent_portrayal(agent):
     return portrayal
 
 
-grid_width = 40
-grid_height = 40
+grid_width = 100
+grid_height = 100
 grid = CanvasGrid(agent_portrayal, grid_width, grid_height)
 
 #canvas_element = CanvasGrid(SsAgent_portrayal, 50, 50, 500, 500)
@@ -92,6 +91,10 @@ chart = ChartModule([{"Label": "Avg_Battery",
                       {"Label": "lower25",
                       "Color": "Red"}],
                     data_collector_name='datacollector')
+chart_time_in_state = ChartModule([{"Label": "timeInState",
+                      "Color": "Black"}],
+                    data_collector_name='datacollector')
+
 chart2 = ChartModule([{"Label": "Num_agents",
                       "Color": "Black"}],
                     data_collector_name='number_of_EVs')
@@ -100,12 +103,12 @@ histogram = HistogramModule(list(np.arange(0,121, 10)), 200, 500)
 chart_element = ChartModule([{"Label": "EVs", "Color": "#AA0000"}])
 
 
-n_slider = UserSettableParameter('slider', "N", 100, 2, 200, 1)
+n_slider = UserSettableParameter('slider', "N", 100, 2, 500, 1)
 vision_slider = UserSettableParameter('slider', "vision", 10, 1, 20, 1)
 n_poles_slider = UserSettableParameter('slider', "n_poles", 10, 2, 50, 1)
 
 server = ModularServer(EV_Model,
-                       [grid, chart, chart_element],
+                       [grid, chart, chart_time_in_state, chart_element],
                        "EV Model",
                        {"N": n_slider, "width": grid_width, "height": grid_height, "n_poles": n_poles_slider, "vision": vision_slider})
 
