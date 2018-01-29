@@ -19,28 +19,27 @@ class Charge_pole(Agent):
 
     def step(self):
         pass
-        max_charge = 3*model.vision
-        max_sockets = 2
-        self.charge = max_charge
-        self.max_sockets = max_sockets
-        self.pos = pos
-        
-
-    def step(self):
-        self.amount = min([self.max_sockets, self.amount + 1])
-
 
 # Create the Electric Vehicles agents
 class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
+    def __init__(self,
+                 unique_id,
+                 model,
+                 home_pos,
+                 work_pos,
+                 vision=1,
+                 max_battery=200,
+                 battery=150,
+                 usual_charge_time=10,
+                 braveness=10):
 
-    def __init__(self, unique_id, model, vision, home_pos, work_pos):
         super().__init__(unique_id, model)
         self.unique_id = unique_id
-        self.vision = 1                                                    # taken from a slider input
-        self.max_battery = np.random.randint(150,200)                      # maximum battery size, differs for different cars
-        self.battery = np.random.randint(120,self.max_battery)             # starting battery 
-        self.usual_charge_time = 10                                        # the time period for how long it usually charges
+        self.vision = vision                                                # taken from a slider input
+        self.max_battery = max_battery                     # maximum battery size, differs for different cars
+        self.battery = battery             # starting battery
+        self.usual_charge_time = usual_charge_time                                        # the time period for how long it usually charges
         self.time_charging = 0
         self.current_strategy = 0
         self.pole_count = 0                                                # counts the amount of charging_pole encounters (to calculate the 'age' of memories)
@@ -55,7 +54,7 @@ class EV_Agent(Agent):
         self.shopping_pos = (0, 0)          # Will be set later
         self.target = "work"                # Sets off from home at first
         self.target_pos = self.work_pos[:]
-        self.braveness = 1
+        self.braveness = braveness
 
     # can randomly move in the neighbourhood with radius = vision
     def move(self):
@@ -64,8 +63,16 @@ class EV_Agent(Agent):
             self.getNeighbourhood()
             self.chooseNextStep()
             self.moveEV()
-            
-        
+
+    def step(self):
+        #self.total_EV_in_cell = self.total_EV_in_cell
+
+        if self.battery <= 0:
+            self.model.grid._remove_agent(self.pos, self)
+            self.model.schedule.remove(self)
+        if self.battery > 0:
+            self.move()
+
     def getNeighbourhood(self):
         self.possible_steps = self.model.grid.get_neighborhood(self.pos,radius = 1,moore=True,include_center=True)
         self.polesInSight = self.checkForPoles()
@@ -87,10 +94,7 @@ class EV_Agent(Agent):
                 else:
                     self.updateMemory(-1,point)
                     if self.battery < 100:
-                        if len(self.offLimits) < 4:
-                            self.offLimits.append(point)
-                        else:
-                            self.offLimits = [point]+self.offLimits[:-1]
+                            self.offLimits = [point]
         self.neighborMemory(neighbors)
 
     def neighborMemory(self,neighbors):
@@ -172,10 +176,7 @@ class EV_Agent(Agent):
                         #print("target reached: charging", self.unique_id)
                         self.charge()
                     else:
-                        if len(self.offLimits) < 4:
-                            self.offLimits.append(self.pos)
-                        else:
-                            self.offLimits = [self.pos]+self.offLimits[:-1]
+                        self.offLimits = [self.pos]
                         self.chooseTargetPole()
                 else:
                     self.charge()
@@ -185,24 +186,16 @@ class EV_Agent(Agent):
                 self.target_pos = self.work_pos[:]
 
     def newRandomPos(self):
-        # Coordinates between home and work
-        center_pos = ((self.home_pos[0]+self.work_pos[0])/2,
-                      (self.home_pos[1]+self.work_pos[1])/2)
-
-        # Random polar coordinates
-        rand_angle = np.random.uniform(low=0, high=np.pi*2)
-        rand_distance = np.random.uniform(low=0, high=self.braveness)
-
-        # New random target position
-        self.target_pos[0] = int(np.clip(a_min=0, a_max=self.model.grid.width, a=center_pos[0]+rand_distance*np.cos(rand_angle)))
-        self.target_pos[1] = int(np.clip(a_min=0, a_max=self.model.grid.height, a=center_pos[1] + rand_distance * np.sin(rand_angle)))
+        hw_dist = np.sqrt((self.home_pos[0]-self.work_pos[0])**2 + (self.home_pos[1]-self.work_pos[1])**2)
+        center_pos = ((self.home_pos[0]+self.work_pos[0])/2, (self.home_pos[1]+self.work_pos[1])/2)
+        self.target_pos = (self.braveness*np.random.randint(np.max([center_pos[0] - hw_dist, 0]),np.min([center_pos[0] + hw_dist, self.model.grid.width])),self.braveness*np.random.randint(np.max([center_pos[1] - hw_dist, 0]),np.min([center_pos[1] + hw_dist, self.model.grid.height])))
 
     def chooseNextStep(self):
         # Steps towards the target and chooses a position with the shortest remaining distance
         self.new_position = self.possible_steps[0]
-        new_distance = distance.euclidean(self.new_position, self.target_pos)
+        new_distance = (self.new_position[0]-self.target_pos[0])**2 + (self.new_position[1]-self.target_pos[1])**2
         for candidate_position in self.possible_steps:
-            candidate_distance = distance.euclidean(self.target_pos, candidate_position)
+            candidate_distance = (candidate_position[0]-self.target_pos[0])**2 + (candidate_position[1]-self.target_pos[1])**2
             if candidate_distance < new_distance:
                 new_distance = candidate_distance
                 self.new_position = candidate_position[:]
@@ -284,24 +277,22 @@ class EV_Agent(Agent):
         else:
             OptionScores = []
 
-            # The option array is an array with [[position, best sore], [position, best score], ...] depending on how
-            # many options are available. In this for loop the distance between every CP and the agent is
-            # calculated. This distance is put into a linear declining formula which is multiplied by the already
-            # existing score. After every all the multiplications are done, the CP with the best score is chosen as
-            # the new target position. We still have to discuss if we want it to be exp. of lin. declining function.
-            # (depending on how strong we want the distance to affect the EV)
             for i in np.arange(np.shape(options)[0]):
+                # adding weight to distance & battery and calculating new score for every pole
                 dist = abs(self.pos[0]-self.pos[1]) + abs(options[i][0][0]-options[i][0][1])
-                a_lin = 1 / 50
-                w_dist_lin = (-a_lin * dist) + 1
-                new_CP_score = w_dist_lin * options[i][1]
+                a = 1 / 100
+                w_dist = (-a * dist) + 1
+                w_batt = (-a * self.battery)+1
+                new_CP_score = (w_dist - (w_batt * (dist/100)))* options[i][1]
+
+                # adding these new scores to an array
                 OptionScores.append(new_CP_score)
 
+            # choosing the pole with the highest score from the array as the new target
             ind_highest_score = np.argmax(OptionScores)
             self.target_pos = options[ind_highest_score][0]
-            #self.target_pos = random.choice(options)[0]
             self.target = "charge_pole"
-            #print("target set",self.unique_id,self.target_pos)
+
 
     def checkOptions(self):
         # get scores for current strategy
@@ -319,6 +310,10 @@ class EV_Agent(Agent):
                     found += 1
                 else: 
                     options.remove(opt)
+
+        # if self.dist > max([x,y])+0.41421356237 * min([x,y])
+        #         options.remove(pole)
+
         print(options)
         if len(options)>0:
             print(options[0])
@@ -331,14 +326,3 @@ class EV_Agent(Agent):
         cost = dist
         self.battery -= cost
     
-    def step(self):
-        #self.total_EV_in_cell = self.total_EV_in_cell
-        if self.battery <= 0:
-            self.model.grid._remove_agent(self.pos, self)
-            self.model.schedule.remove(self)
-        if self.battery > 0:
-            self.move()
-
-            #print(self.unique_id, self.battery)
-
-

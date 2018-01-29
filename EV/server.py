@@ -1,21 +1,22 @@
 # server.py
+import numpy as np
+
 from mesa.visualization.modules import CanvasGrid, ChartModule
 from mesa.visualization.ModularVisualization import ModularServer
+from mesa.visualization.UserParam import UserSettableParameter
+from mesa.visualization.ModularVisualization import VisualizationElement
 
 from EV.agents import EV_Agent, Charge_pole
 from EV.model import EV_Model
 
-import numpy as np
-
-
-
-from mesa.visualization.ModularVisualization import VisualizationElement
 
 class HistogramModule(VisualizationElement):
     package_includes = ["Chart.min.js"]
     local_includes = ["HistogramModule.js"]
 
     def __init__(self, bins, canvas_height, canvas_width):
+        super().__init__()
+
         self.canvas_height = canvas_height
         self.canvas_width = canvas_width
         self.bins = bins
@@ -25,19 +26,12 @@ class HistogramModule(VisualizationElement):
                                          canvas_height)
         self.js_code = "elements.push(" + new_element + ");"
 
-
     def render(self, model):
         battery_vals = [agent.battery for agent in model.schedule.agents]
         hist = np.histogram(battery_vals, bins=self.bins)[0]
         print(hist)
         print(self.bins)
         return [int(x) for x in hist]
-
-
-
-from mesa.visualization.UserParam import UserSettableParameter
-
-
 
 
 # server.py
@@ -70,20 +64,8 @@ def agent_portrayal(agent):
         portrayal["Color"] = "black"
         portrayal["Layer"] = 1
 
-
-
-    # portrayal["Shape"] = "rect"
-    # portrayal["Filled"] = "true"
-    # portrayal["Layer"] = 0
-    # portrayal["w"] = 1
-    # portrayal["h"] = 1
-    
     return portrayal
 
-
-grid_width = 100
-grid_height = 100
-grid = CanvasGrid(agent_portrayal, grid_width, grid_height)
 
 #canvas_element = CanvasGrid(SsAgent_portrayal, 50, 50, 500, 500)
 chart = ChartModule([{"Label": "Avg_Battery",
@@ -102,6 +84,12 @@ chart_element = ChartModule([{"Label": "EVs", "Color": "#AA0000"}])
 n_slider = UserSettableParameter('slider', "N", 100, 2, 200, 1)
 vision_slider = UserSettableParameter('slider', "vision", 10, 1, 20, 1)
 n_poles_slider = UserSettableParameter('slider', "n_poles", 10, 2, 50, 1)
+
+
+grid_width = 100
+grid_height = 100
+grid = CanvasGrid(agent_portrayal, grid_width, grid_height)
+
 
 server = ModularServer(EV_Model,
                        [grid, chart, chart_element],

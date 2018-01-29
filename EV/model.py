@@ -13,34 +13,33 @@ from EV.agents import EV_Agent, Charge_pole
 from EV.schedule import RandomActivationByBreed
 
 
-# ouput the mean of all battery
+# Mean value of all battery
 def mean_all_battery(model):
-
     agent_battery_levels = [agent.battery for agent in model.schedule.agents]
-    #x = sorted(agent_wealths)
-    
-    B = np.mean(agent_battery_levels)
-    return B
+    return np.mean(agent_battery_levels)
 
+
+# Find 25. percentile
 def lowest_25_percent(model):
     agent_battery_levels = [agent.battery for agent in model.schedule.agents]
-    #x = sorted(agent_wealths)
-    return  np.percentile(agent_battery_levels, 25)
+    return np.percentile(agent_battery_levels, 25)
 
-def count_agents(model):  
-    N = model.num_agents
-    return N
+
+# Count the number of agents
+def count_agents(model):
+    return model.num_agents
 
 
 # Create the model
 class EV_Model(Model):
-    def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10):
+    def __init__(self, N=50, width=20, height=20, n_poles=10, vision=10, seed=None):
+        super().__init__(seed)
+
         self.num_agents = N
 
-        self.grid = MultiGrid(width, height, False) #toroidal (for now)
+        self.grid = MultiGrid(width, height, False)
         self.schedule = RandomActivationByBreed(self)
         self.vision = vision
-
 
         # All grid points: (Terribly inefficient, but works.)
         all_grid_points = []
@@ -49,17 +48,14 @@ class EV_Model(Model):
                 all_grid_points.append([i, j])
         np.random.shuffle(all_grid_points)
 
-
         # Create Charge Pole agents
         index = 0
         for i in range(n_poles):
             x, y = all_grid_points[index]
             index = index + 1
 
-            charge_pole = Charge_pole(i, (x,y), self)
+            charge_pole = Charge_pole(i, (x, y), self)
             self.grid.place_agent(charge_pole, (x, y))
-
-        # Create list of all possible homes and workplaces, and choose two randomly per agent
 
         # Create EV agents
         for i in range(self.num_agents):
@@ -68,18 +64,24 @@ class EV_Model(Model):
             work_pos = all_grid_points[index]
             index = index + 1
 
-            EV = EV_Agent(i, self, self.vision, home_pos, work_pos)
+            # Parameters
+            max_battery = np.random.randint(150, 200)
+            battery = np.random.randint(120, max_battery)
+            usual_charge_time = 10
+            braveness = 10
+            vision = 1
+
+            EV = EV_Agent(i, self, home_pos, work_pos, vision, max_battery, battery, usual_charge_time, braveness)
+
             self.schedule.add(EV)
             # Add the agent to a random grid cell
             self.grid.place_agent(EV, home_pos)
 
-        self.datacollector = DataCollector(
-            agent_reporters={"Battery": lambda EV: EV.battery},
-            model_reporters= {"Avg_Battery": mean_all_battery,
-                                "lower25":lowest_25_percent,
-                                "Num_agents": count_agents,
-                                "EVs": lambda m: m.schedule.get_breed_count(EV_Agent)})
-        #self.datacollector = DataCollector(data)
+        self.datacollector = DataCollector(agent_reporters={"Battery": lambda EV: EV.battery},
+                                           model_reporters={"Avg_Battery": mean_all_battery,
+                                                            "lower25":lowest_25_percent,
+                                                            "Num_agents": count_agents,
+                                                            "EVs": lambda m: m.schedule.get_breed_count(EV_Agent)})
 
         self.running = True
             
