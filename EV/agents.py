@@ -27,18 +27,18 @@ class EV_Agent(Agent):
     def __init__(self, unique_id, model, vision, home_pos, work_pos):
         super().__init__(unique_id, model)
         self.unique_id = unique_id
-        self.vision = vision                                             # taken from a slider input
+        self.vision = vision                                        # taken from a slider input
         self.max_battery = np.random.randint(70,80)                 # maximum battery size, differs for different cars is between 70 and 80 kwh (all tesla)
-        self.battery = np.random.randint(20,self.max_battery)       # starting battery 
-        self.usual_charge_time = np.random.normal(30,8) 			# the time period for how long it usually charges
+        self.battery = np.random.randint(50,self.max_battery)       # starting battery 
+        self.usual_charge_time = np.random.normal(25,10) 			# the time period for how long it usually charges
         self.charge_speed = 3                                       # the battery increase for every timestep at a charge station
         self.time_charging = 0
         self.state = np.random.choice(["working", "shopping", "at_home", "traveling"])	#inital state
         self.time_in_state = np.random.randint(0,30)	#initial value to make sure not everyone moves at the same time
-        self.how_long_at_work = np.random.normal(25, 3)  #if at work, ususally stays for 32 timesteps
+        self.how_long_at_work = np.random.normal(25, 3)  #initial value for time to stay at work
         self.how_long_shopping = np.random.normal(5, 3)
         self.how_long_at_home = np.random.normal(30, 5) #if at home, ususally stays for 30 timesteps
-        self.minimum_battery_to_look_for_cp = 20
+        self.minimum_battery_to_look_for_cp = abs(np.random.normal(30, 10))
 
         self.current_strategy = 0
         self.pole_count = 0                                                # counts the amount of charging_pole encounters (to calculate the 'age' of memories)
@@ -57,10 +57,18 @@ class EV_Agent(Agent):
         self.target_pos = self.work_pos[:]
         self.braveness = 1
 
+        # the amount of tiles it will explore away from the middle between home and work is normally distributed
+        # this will be lower the more poles found, and is exponentially distributed.
+        self.initial_bravery = abs(round(np.random.normal(int(self.model.grid_size/10), 5))) 
+
+
+
     # can randomly move in the neighbourhood with radius = vision
     def move(self):
 
     	self.time_in_state = self.checkState(self.state, self.time_in_state)
+    	# if self.unique_id == 10:
+    	# 	print(len(self.memory), self.memory)
     	if self.time_in_state == 0:
 	        self.checkTargets()                                                     # checks if needs to look for chargepole, and checks if target is reached
 	        if not (self.target == "charge_pole" and self.pos == self.target_pos):  # if not charging (anymore):
@@ -70,7 +78,7 @@ class EV_Agent(Agent):
             
 
 
-	# checks what the agent is doing
+	# checks what the agent is doing, and let it be in that state for a while
     def checkState(self, state, time_in_state):
         if state ==  "working":
             if time_in_state < self.how_long_at_work:
@@ -137,7 +145,7 @@ class EV_Agent(Agent):
         #         if type(agent) == Charge_pole:
         #             poles.append(cell)
 
-        # new method, is faster
+        # new method, is faster, does not loop trough the whole neighborhood
         neig = self.model.grid.get_neighbors(self.pos,radius = self.vision,moore=True,include_center=True)
         for agent in neig:
         	if type(agent) == Charge_pole:
@@ -206,7 +214,7 @@ class EV_Agent(Agent):
                 self.target = "shopping"
                 self.state = "working"
                 self.how_long_shopping = np.random.normal(5, 3) #if at shopping center, stays around 5 timesteps
-                self.target_pos = self.newRandomPos()         
+                self.newRandomPos() # self.target_pos is selected         
 
             elif self.target == "shopping":
                 # Goes home
@@ -245,15 +253,29 @@ class EV_Agent(Agent):
     # chooses new random position around center
     def newRandomPos(self):
         # Coordinates between home and work
-        center_pos = ((self.home_pos[0]+self.work_pos[0])/2,
-                      (self.home_pos[1]+self.work_pos[1])/2)
+        center_pos = (int((self.home_pos[0]+self.work_pos[0])/2),
+                      int((self.home_pos[1]+self.work_pos[1])/2))
+        hw_dist = np.sqrt((self.home_pos[0]-self.work_pos[0])**2 + (self.home_pos[1]-self.work_pos[1])**2)
 
-        # Random polar coordinates
-        rand_angle = np.random.uniform(low=0, high=np.pi*2)
-        rand_distance = np.random.uniform(low=0, high=self.braveness)
+        polesInMemory = len(self.memory)- 5 # initial memory with strategies is 5, every pole added in memory is one extra
 
-        # New random target position
-        return (int(np.clip(a_min=0, a_max=self.model.grid.width, a=center_pos[0]+rand_distance*np.cos(rand_angle))),int(np.clip(a_min=0, a_max=self.model.grid.height, a=center_pos[1] + rand_distance * np.sin(rand_angle))))
+        if polesInMemory == 0:
+        	bravery = round(np.random.exponential(self.initial_bravery))
+        else:
+        	bravery = round(np.random.exponential(self.initial_bravery/polesInMemory)) # exponential function to get random shopping position distance
+
+        # newPos = np.random.choice(self.model.grid.get_neighborhood(center_pos, radius = int(bravery), moore = True, include_center = True), 1) 
+        if bravery != 0:
+        	newPos = (np.random.randint(np.max([center_pos[0] - bravery, 0]),
+        		np.min([center_pos[0] + bravery, self.model.grid.width])),
+        	np.random.randint(np.max([center_pos[1] - bravery, 0]),
+        		np.min([center_pos[1] + bravery, self.model.grid.height])))
+        else:
+        	newPos = center_pos
+
+	   
+        self.target_pos = newPos
+        
 
     def chooseNextStep(self):
         # Steps towards the target and chooses a position with the shortest remaining distance
@@ -342,7 +364,9 @@ class EV_Agent(Agent):
         # if no options, explore
         if len(options) == 0:
             self.target = "searching"
-            self.newRandomPos()
+            #completely random position, and not somewhere close to its center
+            self.target_pos = (np.random.randint(0,self.model.grid.width), np.random.randint(0, self.model.grid.height))
+            #self.newRandomPos()
         else:
             OptionScores = []
 
