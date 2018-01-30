@@ -24,7 +24,7 @@ class Charge_pole(Agent):
 # Create the Electric Vehicles agents
 class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
-    def __init__(self, unique_id, model, vision, home_pos, work_pos):
+    def __init__(self, unique_id, model, vision, home_pos, work_pos, initial_bravery):
         super().__init__(unique_id, model)
         self.unique_id = unique_id
         self.vision = vision                                        # taken from a slider input
@@ -59,7 +59,7 @@ class EV_Agent(Agent):
 
         # the amount of tiles it will explore away from the middle between home and work is normally distributed
         # this will be lower the more poles found, and is exponentially distributed.
-        self.initial_bravery = abs(round(np.random.normal(int(self.model.grid_size/10), 5))) 
+        self.initial_bravery = abs(round(np.random.normal(initial_bravery, 5))) 
 
 
 
@@ -266,10 +266,10 @@ class EV_Agent(Agent):
 
         # newPos = np.random.choice(self.model.grid.get_neighborhood(center_pos, radius = int(bravery), moore = True, include_center = True), 1) 
         if bravery != 0:
-        	newPos = (np.random.randint(np.max([center_pos[0] - bravery, 0]),
-        		np.min([center_pos[0] + bravery, self.model.grid.width])),
-        	np.random.randint(np.max([center_pos[1] - bravery, 0]),
-        		np.min([center_pos[1] + bravery, self.model.grid.height])))
+            newPos = (np.random.choice([np.max([center_pos[0] - bravery, 0]),
+        		np.min([center_pos[0] + bravery, self.model.grid.width - 1])]),
+        	np.random.choice([np.max([center_pos[1] - bravery, 0]),
+        		np.min([center_pos[1] + bravery, self.model.grid.height - 1])]))
         else:
         	newPos = center_pos
 
