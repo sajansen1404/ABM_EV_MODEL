@@ -48,7 +48,7 @@ def PointsInCircum(r,n=100):
 
 # Create the model
 class EV_Model(Model):
-    def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10, grid_positions = "random", initial_bravery = 10):
+    def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10, grid_positions = "random", initial_bravery = 10, battery_size = 25):
         self.num_agents = N
         self.grid = MultiGrid(width, height, False) #toroidal (for now)
         self.schedule = RandomActivationByBreed(self)
@@ -115,7 +115,7 @@ class EV_Model(Model):
             home_pos = self.grid.find_empty()
             work_pos = self.grid.find_empty()
 
-            EV = EV_Agent(i, self, self.vision, np.array(home_pos), np.array(work_pos), initial_bravery)
+            EV = EV_Agent(i, self, self.vision, np.array(home_pos), np.array(work_pos), initial_bravery, battery_size)
             self.schedule.add(EV)
             
             self.grid.place_agent(EV, home_pos)

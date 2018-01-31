@@ -114,6 +114,8 @@ n_slider = UserSettableParameter('slider', "N", 100, 2, 500, 10)
 vision_slider = UserSettableParameter('slider', "vision", 4, 1, 20, 1)
 n_poles_slider = UserSettableParameter('slider', "Number of Charge poles", 10, 2, 50, 1)
 initial_bravery_slider = UserSettableParameter('slider', "Exploration rate (bravery)", 10, 5, 30, 1)
+battery_size_slider = UserSettableParameter('slider', "Average battery size", 75, 15, 80, 5)
+
 
 choice_option = UserSettableParameter('choice', 'Charge pole grid layout', value='random',
                                               choices=['random', 'circle','big circle', 'LHS'])
@@ -123,7 +125,8 @@ server = ModularServer(EV_Model,
                        [grid, chart, chart_element],
                        "EV Model",
 
-                       {"N": n_slider, "width": grid_width, "height": grid_height, "n_poles": n_poles_slider, "vision": vision_slider, "grid_positions": choice_option, "initial_bravery":initial_bravery_slider})
+                       {"N": n_slider, "width": grid_width, "height": grid_height, "n_poles": n_poles_slider, 
+                       "vision": vision_slider, "grid_positions": choice_option, "initial_bravery":initial_bravery_slider,"battery_size": battery_size_slider})
 
 
 

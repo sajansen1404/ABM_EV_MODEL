@@ -23,7 +23,7 @@ class Charge_pole(Agent):
 class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
 
-    def __init__(self, unique_id, model, vision, home_pos, work_pos, initial_bravery):
+    def __init__(self, unique_id, model, vision, home_pos, work_pos, initial_bravery, battery_size = 75):
         super().__init__(unique_id, model)
         self.unique_id = unique_id
         self.vision = vision                                        # taken from a slider input
@@ -38,6 +38,13 @@ class EV_Agent(Agent):
         self.how_long_shopping = np.random.normal(5, 3)
         self.how_long_at_home = np.random.normal(30, 5) #if at home, ususally stays for 30 timesteps
         self.minimum_battery_to_look_for_cp = abs(np.random.normal(30, 10))
+
+        # test case
+        if battery_size < 70:
+            self.max_battery = np.random.randint(0.9 * battery_size,1.1 * battery_size)
+            self.battery = np.random.randint(0.75*battery_size, self.max_battery)
+            self.minimum_battery_to_look_for_cp = abs(np.random.normal(0.5*battery_size, 0.1*battery_size))
+            print(battery_size)
         
         
         self.current_strategy = 0
