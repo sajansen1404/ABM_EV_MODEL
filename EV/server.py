@@ -70,22 +70,13 @@ def agent_portrayal(agent):
         portrayal["Color"] = "black"
         portrayal["Layer"] = 1
 
+
         if agent.unique_id == 10:
             portrayal["Shape"] = "rect"
             portrayal["w"] = 0.8
             portrayal["h"] = 0.8
             portrayal["Color"] = "blue"
             portrayal["Layer"] = 2
-
-        	
-            
-            
-            
-            
-
-
-
-
 
     # portrayal["Shape"] = "rect"
     # portrayal["Filled"] = "true"
@@ -98,6 +89,7 @@ def agent_portrayal(agent):
 grid_size = 80
 grid_width = grid_size
 grid_height = grid_size
+
 grid = CanvasGrid(agent_portrayal, grid_width, grid_height)
 
 #canvas_element = CanvasGrid(SsAgent_portrayal, 50, 50, 500, 500)
@@ -116,6 +108,7 @@ chart2 = ChartModule([{"Label": "Num_agents",
 histogram = HistogramModule(list(np.arange(0,121, 10)), 200, 500)
 chart_element = ChartModule([{"Label": "EVs", "Color": "#AA0000"}])
 
+
 #grid_slider = UserSettableParameter('slider', "grid_size", 100, 20, 200, 1)
 n_slider = UserSettableParameter('slider', "N", 100, 2, 500, 10)
 vision_slider = UserSettableParameter('slider', "vision", 4, 1, 20, 1)
@@ -129,7 +122,9 @@ choice_option = UserSettableParameter('choice', 'Charge pole grid layout', value
 server = ModularServer(EV_Model,
                        [grid, chart, chart_element],
                        "EV Model",
+
                        {"N": n_slider, "width": grid_width, "height": grid_height, "n_poles": n_poles_slider, "vision": vision_slider, "grid_positions": choice_option, "initial_bravery":initial_bravery_slider})
+
 
 
 server.port = 8521 # The default

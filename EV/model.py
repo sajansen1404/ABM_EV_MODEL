@@ -42,14 +42,9 @@ def count_agents(model):
     N = model.num_agents
     return N
 
-# gives back a list of n points in a circle of radius r
+  # gives back a list of n points in a circle of radius r
 def PointsInCircum(r,n=100):
     return [(round(math.cos(2*np.pi/n*x)*r),round(math.sin(2*np.pi/n*x)*r)) for x in range(0,n+1)]
-
-
-
-
-
 
 # Create the model
 class EV_Model(Model):
@@ -111,6 +106,7 @@ class EV_Model(Model):
 
 
             
+
         # Create EV agents
         for i in range(self.num_agents):
             
@@ -118,17 +114,21 @@ class EV_Model(Model):
             empty_coord = self.grid.find_empty()
             home_pos = self.grid.find_empty()
             work_pos = self.grid.find_empty()
+
             EV = EV_Agent(i, self, self.vision, np.array(home_pos), np.array(work_pos), initial_bravery)
             self.schedule.add(EV)
             
             self.grid.place_agent(EV, home_pos)
 
+
         self.datacollector = DataCollector(
             agent_reporters={"Battery": lambda EV: EV.battery},
             model_reporters= {"Avg_Battery": mean_all_battery,
+
                                 "lower25": lowest_25_percent,
                                 "timeInState": time_in_state,
                                 "unique_battery":specific_battery,
+
                                 "Num_agents": count_agents,
                                 "EVs": lambda m: m.schedule.get_breed_count(EV_Agent)})
         #self.datacollector = DataCollector(data)

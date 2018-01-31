@@ -15,15 +15,14 @@ from scipy.spatial import distance
 class Charge_pole(Agent):
     def __init__(self, unique_id, pos, model):
         super().__init__(pos, model)
-        self.free_poles = 2
-        self.charge_speed = 20  
-
+        self.free_poles = 2        
     def step(self):
         pass
 
 # Create the Electric Vehicles agents
 class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
+
     def __init__(self, unique_id, model, vision, home_pos, work_pos, initial_bravery):
         super().__init__(unique_id, model)
         self.unique_id = unique_id
@@ -39,7 +38,8 @@ class EV_Agent(Agent):
         self.how_long_shopping = np.random.normal(5, 3)
         self.how_long_at_home = np.random.normal(30, 5) #if at home, ususally stays for 30 timesteps
         self.minimum_battery_to_look_for_cp = abs(np.random.normal(30, 10))
-
+        
+        
         self.current_strategy = 0
         self.pole_count = 0                                                # counts the amount of charging_pole encounters (to calculate the 'age' of memories)
         self.strategies = [[1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,0,0,0,0,0],[1,1,1,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0]] # different strategies used, which memories count in each strategyg
@@ -61,11 +61,8 @@ class EV_Agent(Agent):
         # this will be lower the more poles found, and is exponentially distributed.
         self.initial_bravery = abs(round(np.random.normal(initial_bravery, 5))) 
 
-
-
     # can randomly move in the neighbourhood with radius = vision
     def move(self):
-
     	self.time_in_state = self.checkState(self.state, self.time_in_state)
     	# if self.unique_id == 10:
     	# 	print(len(self.memory), self.memory)
@@ -98,7 +95,6 @@ class EV_Agent(Agent):
         else:
         	return 0
 
-
     # registers possible moves and charging pole positions    
     def getNeighbourhood(self):
         self.possible_steps = self.model.grid.get_neighborhood(self.pos,radius = 1,moore=True,include_center=True) # possible moves
@@ -123,11 +119,10 @@ class EV_Agent(Agent):
                 else:
                     # if the pole is full, store this information to memory so when looking for a pole it won't visit the 3 (at this point) last full poles it passed by
                     self.updateMemory(-1,point)
+
                     if self.battery < self.minimum_battery_to_look_for_cp:
-                        if len(self.offLimits) < 4:
-                            self.offLimits.append(point)
-                        else:
-                            self.offLimits = [point]+self.offLimits[:-1]
+                        self.offLimits = [point]
+
         self.neighborMemory(neighbors)
 
     # adds all new neighboring poles to memory, replacing older memories
@@ -150,8 +145,6 @@ class EV_Agent(Agent):
         for agent in neig:
         	if type(agent) == Charge_pole:
         		poles.append(agent.pos)
-        
-
         return poles
 
     # returns the free sockets of a pole at a given position
@@ -191,6 +184,7 @@ class EV_Agent(Agent):
         if self.time_charging < self.usual_charge_time or self.battery < self.max_battery:  #self.time_charging < self.usual_charge_time or 
             if self.battery < self.max_battery:
                 self.battery += self.charge_speed
+
                 if self.battery > self.max_battery: 
                     self.battery = self.max_battery
         # if battery is done charging and minimum charging time is over, stop charging
@@ -205,6 +199,7 @@ class EV_Agent(Agent):
 
     # checks whether EV needs to look for charger and whether targets are reached
     def checkTargets(self):
+
         if self.battery < self.minimum_battery_to_look_for_cp and self.target != "charge_pole" and self.target != "searching":
             self.chooseTargetPole()
 
@@ -272,11 +267,8 @@ class EV_Agent(Agent):
         		np.min([center_pos[1] + bravery, self.model.grid.height - 1])]))
         else:
         	newPos = center_pos
-
-	   
         self.target_pos = newPos
-        
-
+                       
     def chooseNextStep(self):
         # Steps towards the target and chooses a position with the shortest remaining distance
         self.new_position = self.possible_steps[0]
@@ -370,24 +362,21 @@ class EV_Agent(Agent):
         else:
             OptionScores = []
 
-            # The option array is an array with [[position, best sore], [position, best score], ...] depending on how
-            # many options are available. In this for loop the distance between every CP and the agent is
-            # calculated. This distance is put into a linear declining formula which is multiplied by the already
-            # existing score. After every all the multiplications are done, the CP with the best score is chosen as
-            # the new target position. We still have to discuss if we want it to be exp. of lin. declining function.
-            # (depending on how strong we want the distance to affect the EV)
             for i in np.arange(np.shape(options)[0]):
+                # adding weight to distance & battery and calculating new score for every pole
                 dist = abs(self.pos[0]-self.pos[1]) + abs(options[i][0][0]-options[i][0][1])
-                a_lin = 1 / 50
-                w_dist_lin = (-a_lin * dist) + 1
-                new_CP_score = w_dist_lin * options[i][1]
+                a = 1 / 100
+                w_dist = (-a * dist) + 1
+                w_batt = (-a * self.battery)+1
+                new_CP_score = (w_dist - (w_batt * (dist/100)))* options[i][1]
+
+                # adding these new scores to an array
                 OptionScores.append(new_CP_score)
 
+            # choosing the pole with the highest score from the array as the new target
             ind_highest_score = np.argmax(OptionScores)
             self.target_pos = options[ind_highest_score][0]
-            #self.target_pos = random.choice(options)[0]
             self.target = "charge_pole"
-            #print("target set",self.unique_id,self.target_pos)
 
     # goes through known poles and checks if they're options as targets
     def checkOptions(self):
