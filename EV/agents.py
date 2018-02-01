@@ -24,6 +24,7 @@ class Charge_pole(Agent):
         self.usage.append( 1- (self.free_poles / self.initial_free_poles))
         self.avg_usage = np.mean(self.usage[-200:])
 
+
 # Create the Electric Vehicles agents
 class EV_Agent(Agent):
     """ An agent with fixed initial battery."""
@@ -121,7 +122,7 @@ class EV_Agent(Agent):
                 else:
                     # if the pole is full, store this information to memory so when looking for a pole it won't visit the 3 (at this point) last full poles it passed by
                     self.updateMemory(-1,point)
-                    if self.battery < 100:
+                    if self.battery < self.minimum_battery_to_look_for_cp:
                         self.offLimits = [point]
         self.neighborMemory(neighbors)
 

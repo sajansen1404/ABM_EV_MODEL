@@ -36,6 +36,7 @@ def specific_battery(model):
 
 def time_in_state(model):
     agent_time_in_state = [agent.time_in_state for agent in model.schedule.agents if type(agent) is EV_Agent]
+    
     return np.mean(agent_time_in_state)
 
 def count_agents(model):  
@@ -53,7 +54,6 @@ def high_usage(model):
 
 def low_usage(model):
     CP_usage = [agent.avg_usage for agent in model.schedule.agents if type(agent) is Charge_pole]
-
     return np.percentile(np.array(CP_usage), 25)
 
 def percentageFailed(model):
@@ -61,9 +61,10 @@ def percentageFailed(model):
     succeeded = sum([agent.attempts_success for agent in model.schedule.agents if type(agent) is EV_Agent])
     if failed > 0:
         percentage = failed / (failed + succeeded)
+        return percentage
     else:
         return 0
-    return percentage
+    
 
 def totalAttempts(model):
     failed = sum([agent.attempts_failed for agent in model.schedule.agents if type(agent) is EV_Agent])
@@ -108,6 +109,7 @@ class EV_Model(Model):
 
                 charge_pole = Charge_pole(i, new_coord, self)
                 self.grid.place_agent(charge_pole, new_coord)
+                self.schedule.add(charge_pole)
                 
         elif grid_positions == "big circle":
             center_grid = (int(width/2), int(height/2))
@@ -125,6 +127,7 @@ class EV_Model(Model):
                 empty_coord = self.grid.find_empty()
                 charge_pole = Charge_pole(i,empty_coord, self)
                 self.grid.place_agent(charge_pole, empty_coord)
+                self.schedule.add(charge_pole)
 
         elif grid_positions == "LHS":
             #print(n_poles)
@@ -139,6 +142,7 @@ class EV_Model(Model):
                     empty_coord = self.grid.find_empty()
                     charge_pole = Charge_pole(i,empty_coord, self)
                     self.grid.place_agent(charge_pole, empty_coord)
+                self.schedule.add(charge_pole)
 
 
 
@@ -161,9 +165,12 @@ class EV_Model(Model):
         self.datacollector = DataCollector(
             agent_reporters={},
             model_reporters= {"Avg_Battery": mean_all_battery,
-                              "Total_attempts": totalAttempts,
+                              "Usage": avg_usage,
+                              #"High_Usage":high_usage,
+                              # "Low_Usage":low_usage,
+                              #"Total_attempts": totalAttempts,
                               "Percentage_failed": percentageFailed,
-                              "Average_lifespan": averageLifespan,
+                              #"Average_lifespan": averageLifespan,
                               "lower25": lowest_25_percent,
                               "timeInState": time_in_state,
                               "unique_battery":specific_battery,

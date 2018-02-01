@@ -101,9 +101,18 @@ chart = ChartModule([{"Label": "Avg_Battery",
                       "Color": "Green"}],
                     data_collector_name='datacollector')
 
-chart2 = ChartModule([{"Label": "Num_agents",
-                      "Color": "Black"}],
-                    data_collector_name='number_of_EVs')
+chart2 = ChartModule([{"Label": "Percentage_failed",
+                      "Color": "Black"}])
+
+chart_usage = ChartModule([{"Label": "Usage",
+                      "Color": "Black"},
+                      #{"Label": "High_Usage",
+                      #"Color": "Green"},
+                      #{"Label": "Low_Usage",
+                      #"Color": "Red"},
+                      {"Label": "Percentage_failed",
+                      "Color": "Blue"}],
+                    data_collector_name='datacollector')
 
 histogram = HistogramModule(list(np.arange(0,121, 10)), 200, 500)
 chart_element = ChartModule([{"Label": "EVs", "Color": "#AA0000"}])
@@ -122,7 +131,7 @@ choice_option = UserSettableParameter('choice', 'Charge pole grid layout', value
 
 
 server = ModularServer(EV_Model,
-                       [grid, chart, chart_element],
+                       [grid, chart, chart_usage, chart_element],
                        "EV Model",
 
                        {"N": n_slider, "width": grid_width, "height": grid_height, "n_poles": n_poles_slider, 
