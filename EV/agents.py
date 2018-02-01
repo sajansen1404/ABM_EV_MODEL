@@ -88,8 +88,7 @@ class EV_Agent(Agent):
     # can randomly move in the neighbourhood with radius = vision
     def move(self):
         self.age += 1
-        if self.unique_id == 0:
-            ...
+        #if self.unique_id == 0:
             #print("position:",self.pos,"target:",self.target,"target position:",self.target_pos,"state:",self.state,"home:", self.home_pos, "work:",self.work_pos,"center:",self.center_pos,"direction:",self.direction)
         self.checkTargets()
         if self.state == "traveling":  # if not waiting/charging:
@@ -194,7 +193,8 @@ class EV_Agent(Agent):
 
         if self.target_pos[0] == self.pos[0] and self.target_pos[1] == self.pos[1]:
             if self.unique_id == 0:
-                print("target reached!")
+                ...
+                #print("target reached!")
             # Target: work -> shopping, shopping -> home, home -> work, searching -> searching (new target position), charge_pole -> ____ -> prev_target
             if self.target == "work":
                 if self.state == "working":
@@ -485,7 +485,7 @@ class EV_Agent(Agent):
     def step(self):
         if self.battery <= 0:
             # write data to output
-            print("removing agent")
+            #print("removing agent")
             self.model.grid._remove_agent(self.pos, self)
             self.model.schedule.remove(self)
             self.model.current_EVs -= 1

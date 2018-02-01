@@ -127,9 +127,9 @@ class EV_Model(Model):
                 self.grid.place_agent(charge_pole, empty_coord)
 
         elif grid_positions == "LHS":
-            print(n_poles)
+            #print(n_poles)
             coord_list =  np.round(lhs(2, samples = n_poles, criterion = "m")*(self.grid_size-1))
-            print(len(coord_list))
+            #print(len(coord_list))
             for i in range(n_poles):
                 coord = tuple((int(coord_list[i][0]), int(coord_list[i][1])))
                 if self.grid.is_cell_empty(coord):
@@ -194,7 +194,7 @@ class EV_Model(Model):
         return np.linalg.norm(pos_1 - pos_2)
     def stableAgents(self):
         while self.current_EVs < self.num_agents:
-            print("new agent!!!")
+            #print("new agent!!!")
             home_pos = self.grid.find_empty()
             work_pos = self.grid.find_empty()
             EV = EV_Agent(self.totalEVs, self, self.vision, home_pos, work_pos,self.initial_bravery, self.battery_size)
