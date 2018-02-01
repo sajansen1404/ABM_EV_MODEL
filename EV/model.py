@@ -31,7 +31,7 @@ def lowest_25_percent(model):
 
 def specific_battery(model):
     for agent in model.schedule.agents:
-        if agent.unique_id == 10 and if type(agent) is EV_Agent:
+        if agent.unique_id == 10 and type(agent) is EV_Agent:
             return agent.battery
 
 def time_in_state(model):

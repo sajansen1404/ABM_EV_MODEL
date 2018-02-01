@@ -89,7 +89,8 @@ class EV_Agent(Agent):
     def move(self):
         self.age += 1
         if self.unique_id == 0:
-            print("position:",self.pos,"target:",self.target,"target position:",self.target_pos,"state:",self.state,"home:", self.home_pos, "work:",self.work_pos,"center:",self.center_pos,"direction:",self.direction)
+            ...
+            #print("position:",self.pos,"target:",self.target,"target position:",self.target_pos,"state:",self.state,"home:", self.home_pos, "work:",self.work_pos,"center:",self.center_pos,"direction:",self.direction)
         self.checkTargets()
         if self.state == "traveling":  # if not waiting/charging:
             self.getNeighbourhood()                                             # - find possible moves and register charging poles within vision
