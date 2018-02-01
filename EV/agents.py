@@ -15,10 +15,14 @@ from scipy.spatial import distance
 class Charge_pole(Agent):
     def __init__(self, unique_id, pos, model):
         super().__init__(pos, model)
-        self.free_poles = 2        
+        self.initial_free_poles = 2
+        self.free_poles = 2 
+        self.usage = []
+        
 
     def step(self):
-        pass
+        self.usage.append( 1- (self.free_poles / self.initial_free_poles))
+        self.avg_usage = np.mean(self.usage[-200:])
 
 # Create the Electric Vehicles agents
 class EV_Agent(Agent):
@@ -47,7 +51,7 @@ class EV_Agent(Agent):
             self.max_battery = np.random.randint(0.9 * battery_size,1.1 * battery_size)
             self.battery = np.random.randint(0.75*battery_size, self.max_battery)
             self.minimum_battery_to_look_for_cp = abs(np.random.normal(0.5*battery_size, 0.1*battery_size))
-            print(battery_size)
+            
         
         
         self.current_strategy = 0

@@ -18,33 +18,47 @@ from EV.schedule import RandomActivationByBreed
 # ouput the mean of all battery
 def mean_all_battery(model):
 
-    agent_battery_levels = [agent.battery for agent in model.schedule.agents]
+    agent_battery_levels = [agent.battery for agent in model.schedule.agents if type(agent) is EV_Agent]
     #x = sorted(agent_wealths)
     
     B = np.mean(agent_battery_levels)
     return B
 
 def lowest_25_percent(model):
-    agent_battery_levels = [agent.battery for agent in model.schedule.agents]
+    agent_battery_levels = [agent.battery for agent in model.schedule.agents if type(agent) is EV_Agent]
     #x = sorted(agent_wealths)
     return  np.percentile(agent_battery_levels, 25)
 
 def specific_battery(model):
     for agent in model.schedule.agents:
-        if agent.unique_id == 10:
+        if agent.unique_id == 10 and if type(agent) is EV_Agent:
             return agent.battery
 
 def time_in_state(model):
-    agent_time_in_state = [agent.time_in_state for agent in model.schedule.agents]
+    agent_time_in_state = [agent.time_in_state for agent in model.schedule.agents if type(agent) is EV_Agent]
     return np.mean(agent_time_in_state)
 
 def count_agents(model):  
     N = model.num_agents
     return N
 
+def avg_usage(model):
+    CP_usage = [agent.avg_usage for agent in model.schedule.agents if type(agent) is Charge_pole]
+    return np.mean(CP_usage)
+
+def high_usage(model):
+    CP_usage = [agent.avg_usage for agent in model.schedule.agents if type(agent) is Charge_pole]
+
+    return np.percentile(np.array(CP_usage), 75)
+
+def low_usage(model):
+    CP_usage = [agent.avg_usage for agent in model.schedule.agents if type(agent) is Charge_pole]
+
+    return np.percentile(np.array(CP_usage), 25)
+
 def percentageFailed(model):
-    failed = sum([agent.attempts_failed for agent in model.schedule.agents])
-    succeeded = sum([agent.attempts_success for agent in model.schedule.agents])
+    failed = sum([agent.attempts_failed for agent in model.schedule.agents if type(agent) is EV_Agent])
+    succeeded = sum([agent.attempts_success for agent in model.schedule.agents if type(agent) is EV_Agent])
     if failed > 0:
         percentage = failed / (failed + succeeded)
     else:
@@ -52,12 +66,12 @@ def percentageFailed(model):
     return percentage
 
 def totalAttempts(model):
-    failed = sum([agent.attempts_failed for agent in model.schedule.agents])
-    succeeded = sum([agent.attempts_success for agent in model.schedule.agents])
+    failed = sum([agent.attempts_failed for agent in model.schedule.agents if type(agent) is EV_Agent])
+    succeeded = sum([agent.attempts_success for agent in model.schedule.agents if type(agent) is EV_Agent])
     return failed+succeeded
 
 def averageLifespan(model):
-    age = np.mean([agent.age for agent in model.schedule.agents])
+    age = np.mean([agent.age for agent in model.schedule.agents if type(agent) is EV_Agent])
     return age
 
   # gives back a list of n points in a circle of radius r
@@ -145,7 +159,7 @@ class EV_Model(Model):
             self.totalEVs = i
 
         self.datacollector = DataCollector(
-            agent_reporters={"Battery": lambda EV: EV.battery},
+            agent_reporters={},
             model_reporters= {"Avg_Battery": mean_all_battery,
                               "Total_attempts": totalAttempts,
                               "Percentage_failed": percentageFailed,
