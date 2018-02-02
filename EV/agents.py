@@ -280,7 +280,7 @@ class EV_Agent(Agent):
             bravery = round(np.random.exponential(self.initial_bravery/polesInMemory)) # exponential function to get random shopping position distance
 
         if self.model.open == False:
-            newPos = [np.random.choice(np.max([self.center_pos[0] - bravery, 0]),np.min([self.center_pos[0] + bravery, self.model.grid.width - 1])),np.random.choice(np.max([self.center_pos[1] - bravery, 0]),np.min([self.center_pos[1] + bravery, self.model.grid.height - 1]))]
+            newPos = [np.random.choice([np.max([self.center_pos[0] - bravery, 0]),np.min([self.center_pos[0] + bravery, self.model.grid.width - 1])]),np.random.choice([np.max([self.center_pos[1] - bravery, 0]),np.min([self.center_pos[1] + bravery, self.model.grid.height - 1])])]
         else:
             newPos = [np.random.choice(np.arange(self.center_pos[0] - bravery,self.center_pos[0] + bravery + 1)), np.random.choice(np.arange(self.center_pos[1] - bravery,self.center_pos[1] + bravery + 1,1))]
             for i in range(2):
