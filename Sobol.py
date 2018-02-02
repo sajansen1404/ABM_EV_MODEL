@@ -12,7 +12,8 @@ cores = mp.cpu_count()
 iterations = 100
 
 def run_model():
-    numpy.random.seed(int(time() * 1000))
+    print(int(time()))
+    numpy.random.seed(int(time()) * 1000)
     fixed_params = {"N": [],
                     "n_poles": [],
                     "vision": [],
