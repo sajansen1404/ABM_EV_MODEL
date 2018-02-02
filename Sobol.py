@@ -24,7 +24,7 @@ def run_model():
                     "battery_size": 75}
 
 
-    RandomParams = {"N": np.random.uniform(100,500,iterations),
+    RandomParams = {"N": np.random.uniform(100,400,iterations),
                     "n_poles": np.random.uniform(0.1,0.25,iterations),
                     "vision": np.random.choice([1,2],iterations),
                     "grid_positions": np.random.choice(["LHS","circle"],iterations),
