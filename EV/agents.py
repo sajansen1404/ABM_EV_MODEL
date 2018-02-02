@@ -1,8 +1,6 @@
 #   agents.py
 
-import matplotlib.pyplot as plt
 import numpy as np
-import random
 import math
 from mesa import Agent, Model
 from mesa.time import RandomActivation
@@ -49,10 +47,10 @@ class EV_Agent(Agent):
 
         # test case
         if battery_size < 70:
-            self.max_battery = np.random.randint(0.9 * battery_size,1.1 * battery_size)
+            self.max_battery = np.random.randint(0.9 * battery_size, 1.1 * battery_size)
             self.battery = np.random.randint(0.75*battery_size, self.max_battery)
             self.minimum_battery_to_look_for_cp = abs(np.random.normal(0.5*battery_size, 0.1*battery_size))
-            
+
         
         
         self.current_strategy = 0
@@ -63,7 +61,7 @@ class EV_Agent(Agent):
         self.offLimits = []
         self.prev_target = ""
         self.prev_target_pos = []
-        self.cpf = [0.25,0.5,0.75,1.0] 
+        self.cpf = [0.25, 0.5, 0.75, 1.0]
         self.attempts_success = 0
         self.attempts_failed = 0
         # the amount of tiles it will explore away from the middle between home and work is normally distributed
@@ -89,8 +87,6 @@ class EV_Agent(Agent):
     # can randomly move in the neighbourhood with radius = vision
     def move(self):
         self.age += 1
-        #if self.unique_id == 0:
-            #print("position:",self.pos,"target:",self.target,"target position:",self.target_pos,"state:",self.state,"home:", self.home_pos, "work:",self.work_pos,"center:",self.center_pos,"direction:",self.direction)
         self.checkTargets()
         if self.state == "traveling":  # if not waiting/charging:
             self.getNeighbourhood()                                             # - find possible moves and register charging poles within vision
@@ -109,7 +105,7 @@ class EV_Agent(Agent):
             if self.inLastPoints(point) == False:
                 neighbors.append(point)
                 if self.checkIfFree(point)>0:
-                    self.updateMemory(1,point)
+                    self.updateMemory(1, point)
                     # if the pole has space and the battery is very low or no other pole was chosen yet, it sets the pole as target (to give the strategies a chance I don't always grab the closest pole)
                     if (self.battery < self.critical_battery_limit and done == False) or (self.battery < self.minimum_battery_to_look_for_cp and self.target != "charge_pole"):
                         if self.target != "charge_pole" and self.target != "searching": 
@@ -122,12 +118,12 @@ class EV_Agent(Agent):
                 else:
                     # if the pole is full, store this information to memory so when looking for a pole it won't visit the 3 (at this point) last full poles it passed by
                     self.updateMemory(-1,point)
-                    if self.battery < self.minimum_battery_to_look_for_cp:
+                    if self.battery < 100:
                         self.offLimits = [point]
         self.neighborMemory(neighbors)
 
     # adds all new neighboring poles to memory, replacing older memories
-    def neighborMemory(self,neighbors):  
+    def neighborMemory(self, neighbors):
         self.memory["neighborPoles"] = [neighbors], self.memory["neighborPoles"][:-1]
 
     # checks for poles within self.vision and returns the positions
@@ -193,9 +189,6 @@ class EV_Agent(Agent):
             self.chooseTargetPole()
 
         if self.target_pos[0] == self.pos[0] and self.target_pos[1] == self.pos[1]:
-            if self.unique_id == 0:
-                ...
-                #print("target reached!")
             # Target: work -> shopping, shopping -> home, home -> work, searching -> searching (new target position), charge_pole -> ____ -> prev_target
             if self.target == "work":
                 if self.state == "working":
@@ -215,7 +208,7 @@ class EV_Agent(Agent):
                     else:
                         self.time_in_state = 0
                         self.target = "home"
-                        self.how_long_at_home = np.random.normal(30, 5) #if at home, ususally stays for 30 timesteps
+                        self.how_long_at_home = np.random.normal(30, 5)    #if at home, usually stays for 30 timesteps
                         self.target_pos = self.home_pos[:]
                         self.setDirection()
                 else:
@@ -226,14 +219,14 @@ class EV_Agent(Agent):
             elif self.target == "charge_pole":
                 self.state = "charging"
                 if self.time_charging == 0:
-                    if self.checkIfFree((self.pos[0],self.pos[1])) > 0:
+                    if self.checkIfFree((self.pos[0], self.pos[1])) > 0:
                         self.takePlace()
                         self.charge()
                         self.attempts_success+=1
                     else:
                         self.offLimits = self.pos
                         self.chooseTargetPole()
-                        self.attempts_failed+=1
+                        self.attempts_failed += 1
                 else:
                     self.charge()
             else:
@@ -486,7 +479,6 @@ class EV_Agent(Agent):
     def step(self):
         if self.battery <= 0:
             # write data to output
-            #print("removing agent")
             self.model.grid._remove_agent(self.pos, self)
             self.model.schedule.remove(self)
             self.model.current_EVs -= 1

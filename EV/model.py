@@ -81,11 +81,11 @@ def PointsInCircum(r,n=100):
 
 # Create the model
 class EV_Model(Model):
-    def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10, grid_positions = "random", initial_bravery = 10, battery_size = 25):
+    def __init__(self, N = 50, width = 20, height = 20, n_poles = 10, vision = 10, grid_positions = "random", initial_bravery = 10, battery_size = 25, open_grid = True):
         self.battery_size = battery_size
         self.initial_bravery = initial_bravery
         self.num_agents = N
-        self.open =  True
+        self.open = open_grid
         if self.open == True:
             self.grid = MultiGrid(width, height, True) 
         else:
@@ -103,7 +103,7 @@ class EV_Model(Model):
         if grid_positions == "circle":
 
             center_grid = (int(width/2), int(height/2))
-            circle_list = PointsInCircum(round(self.grid_size/4), n_poles)
+            circle_list = PointsInCircum(round(self.grid_size/4), int(N*n_poles))
             for i, coord in enumerate(circle_list):
                 new_coord = (coord[0] + center_grid[0],coord[1] + center_grid[1])
 
@@ -113,7 +113,7 @@ class EV_Model(Model):
                 
         elif grid_positions == "big circle":
             center_grid = (int(width/2), int(height/2))
-            circle_list = PointsInCircum(round(self.grid_size/2-1), n_poles)
+            circle_list = PointsInCircum(round(self.grid_size/2-1),int(N*n_poles))
             for i, coord in enumerate(circle_list):
                 new_coord = (coord[0] + center_grid[0],coord[1] + center_grid[1])
 
@@ -122,7 +122,7 @@ class EV_Model(Model):
 
         # Create Charge Pole agents
         elif grid_positions == "random":
-            for i in range(n_poles):
+            for i in range(int(N*n_poles)):
                 # Add the agent to a random grid cell
                 empty_coord = self.grid.find_empty()
                 charge_pole = Charge_pole(i,empty_coord, self)
@@ -131,9 +131,9 @@ class EV_Model(Model):
 
         elif grid_positions == "LHS":
             #print(n_poles)
-            coord_list =  np.round(lhs(2, samples = n_poles, criterion = "m")*(self.grid_size-1))
+            coord_list =  np.round(lhs(2, samples = int(N*n_poles), criterion = "m")*(self.grid_size-1))
             #print(len(coord_list))
-            for i in range(n_poles):
+            for i in range(int(N*n_poles)):
                 coord = tuple((int(coord_list[i][0]), int(coord_list[i][1])))
                 if self.grid.is_cell_empty(coord):
                     charge_pole = Charge_pole(i,coord, self)
@@ -166,11 +166,11 @@ class EV_Model(Model):
             agent_reporters={},
             model_reporters= {"Avg_Battery": mean_all_battery,
                               "Usage": avg_usage,
-                              #"High_Usage":high_usage,
-                              # "Low_Usage":low_usage,
-                              #"Total_attempts": totalAttempts,
+                              "High_Usage":high_usage,
+                               "Low_Usage":low_usage,
+                              "Total_attempts": totalAttempts,
                               "Percentage_failed": percentageFailed,
-                              #"Average_lifespan": averageLifespan,
+                              "Average_lifespan": averageLifespan,
                               "lower25": lowest_25_percent,
                               "timeInState": time_in_state,
                               "unique_battery":specific_battery,
@@ -201,7 +201,6 @@ class EV_Model(Model):
         return np.linalg.norm(pos_1 - pos_2)
     def stableAgents(self):
         while self.current_EVs < self.num_agents:
-            #print("new agent!!!")
             home_pos = self.grid.find_empty()
             work_pos = self.grid.find_empty()
             EV = EV_Agent(self.totalEVs, self, self.vision, home_pos, work_pos,self.initial_bravery, self.battery_size)
