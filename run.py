@@ -20,7 +20,7 @@ def run_model():
                     "battery_size": 75}
     variable_params = {"N": np.arange(100,500,150),                   # 3
                        "n_poles": [1/10,1/8,1/6,1/4],                 # 4
-                       "vision": range(1, 4, 1),                      # 3
+                       "vision": [1,2],                      # 3
                        "grid_positions": ["LHS", "circle"],           # 2
                        "open_grid": ["True", "False"]}                # 2
                                                                       # 3*4*3*2*2 = 144
