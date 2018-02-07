@@ -39,7 +39,7 @@ To run the visualisation, enter in  a terminal window:
 python run.py
 ```
 
-To run the code used for OFAT enter in a terminal window:
+To run the code used for OFAT, enter in a terminal window:
 ```
 python OFAT.py
 ```
