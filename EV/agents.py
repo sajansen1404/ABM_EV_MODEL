@@ -236,7 +236,7 @@ class EV_Agent(Agent):
             self.chooseTargetPole()
 
         if self.target_pos[0] == self.pos[0] and self.target_pos[1] == self.pos[1]:
-                        if self.target == "work":
+            if self.target == "work":
                 if self.state == "working":
                     if self.time_in_state < self.how_long_at_work:
                         self.time_in_state += 1
@@ -491,7 +491,7 @@ class EV_Agent(Agent):
             result.append( self.memory[key][0][i] * math.pow(0.98,self.pole_count-self.memory[key][1][i]))
         return result
 
-     def chooseTargetPole(self):
+    def chooseTargetPole(self):
         """
         If possible, chooses target pole. Otherwise starts exploring to a completely random position.
         The charge poles is chosen by adding weight to distance & battery and calculating new score for every pole.
