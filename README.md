@@ -39,7 +39,7 @@ To run, enter in  a terminal window:
 python run.py
 ```
 ## Contributors
-
+* T. de Bruijn - Initial work
 * G. Czupy - Initial work
 * S. Jansen - Initial work
 * J. Mies - Initial work
