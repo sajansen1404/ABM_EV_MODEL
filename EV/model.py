@@ -15,8 +15,11 @@ from EV.agents import EV_Agent, Charge_pole
 from EV.schedule import RandomActivationByBreed
 
 
-# ouput the mean of all battery
+
 def mean_all_battery(model):
+    """
+    Data collector function to ouput the mean of all battery
+    """
 
     agent_battery_levels = [agent.battery for agent in model.schedule.agents if type(agent) is EV_Agent]
     #x = sorted(agent_wealths)
@@ -25,18 +28,23 @@ def mean_all_battery(model):
     return B
 
 def lowest_25_percent(model):
+    """
+    Data collector function to ouput the 25th percentil of all batteries
+    """
     agent_battery_levels = [agent.battery for agent in model.schedule.agents if type(agent) is EV_Agent]
     #x = sorted(agent_wealths)
     return  np.percentile(agent_battery_levels, 25)
 
 def specific_battery(model):
+    """
+    Data collector function to ouput the battery of a single EV
+    """
     for agent in model.schedule.agents:
         if agent.unique_id == 10 and type(agent) is EV_Agent:
             return agent.battery
 
 def time_in_state(model):
     agent_time_in_state = [agent.time_in_state for agent in model.schedule.agents if type(agent) is EV_Agent]
-    
     return np.mean(agent_time_in_state)
 
 def count_agents(model):  
@@ -94,12 +102,7 @@ class EV_Model(Model):
         self.vision = vision
         self.grid_size = width
 
-
-
-        #grid_positions = "LHS"
-
-
-        # circle_
+        # adds CPs based on the input grid position
         if grid_positions == "circle":
 
             center_grid = (int(width/2), int(height/2))
@@ -119,8 +122,8 @@ class EV_Model(Model):
 
                 charge_pole = Charge_pole(i, new_coord, self)
                 self.grid.place_agent(charge_pole, new_coord)
+                self.schedule.add(charge_pole)
 
-        # Create Charge Pole agents
         elif grid_positions == "random":
             for i in range(int(N*n_poles)):
                 # Add the agent to a random grid cell
@@ -130,9 +133,7 @@ class EV_Model(Model):
                 self.schedule.add(charge_pole)
 
         elif grid_positions == "LHS":
-            #print(n_poles)
             coord_list =  np.round(lhs(2, samples = int(N*n_poles), criterion = "m")*(self.grid_size-1))
-            #print(len(coord_list))
             for i in range(int(N*n_poles)):
                 coord = tuple((int(coord_list[i][0]), int(coord_list[i][1])))
                 if self.grid.is_cell_empty(coord):
@@ -152,7 +153,7 @@ class EV_Model(Model):
         # Create EV agents
         for i in range(self.num_agents):
             
-            # Add the agent to a random grid cell
+            # Add the agent to a random empty grid cell
             home_pos = self.grid.find_empty()
             work_pos = self.grid.find_empty()
 
@@ -176,7 +177,7 @@ class EV_Model(Model):
                               "unique_battery":specific_battery,
                               "Num_agents": count_agents,
                               "EVs": lambda m: m.schedule.get_breed_count(EV_Agent)})
-        #self.datacollector = DataCollector(data)
+        
 
         self.running = True
         self.current_EVs = self.totalEVs
@@ -186,19 +187,7 @@ class EV_Model(Model):
         self.datacollector.collect(self)
         self.stableAgents()
 
-    def get_distance(self, pos_1, pos_2):
-        """ Get the distance between two point, accounting for toroidal space.
 
-        Args:
-            pos_1, pos_2: Coordinate tuples for both points.
-
-        """
-        pos_1 = np.array(pos_1)
-        pos_2 = np.array(pos_2)
-        if self.grid.torus:
-            pos_1 = (pos_1 - int(self.grid.width/2)) % self.grid.width
-            pos_2 = (pos_2 - int(self.grid.height/2)) % self.grid.height
-        return np.linalg.norm(pos_1 - pos_2)
     def stableAgents(self):
         while self.current_EVs < self.num_agents:
             home_pos = self.grid.find_empty()
