@@ -7,9 +7,9 @@ These instructions will get you a copy of the project up and running on your loc
 ### Prerequisites
 Prerequisite libraries, frameworks, and modules can be installed through:
 
-'''
+```
 pip install -r requirements.txt
-'''
+```
 
 This will install the correct versions of:
 
